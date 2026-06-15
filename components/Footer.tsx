@@ -1,5 +1,3 @@
-'use client'
-
 const NAV_LINKS = [
   { label: 'Serviços', href: '#servicos' },
   { label: 'Sobre', href: '#sobre' },
