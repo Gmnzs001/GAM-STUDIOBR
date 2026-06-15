@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import LoadingScreen from '@/components/LoadingScreen'
+import Navbar from '@/components/Navbar'
+import Hero from '@/components/Hero'
 
 export default function Home() {
   const [loaded, setLoaded] = useState(false)
@@ -10,9 +12,12 @@ export default function Home() {
     <>
       {!loaded && <LoadingScreen onComplete={() => setLoaded(true)} />}
       {loaded && (
-        <main className="flex min-h-screen items-center justify-center">
-          <h1 className="text-4xl font-black text-white">Site carregado</h1>
-        </main>
+        <>
+          <Navbar />
+          <main>
+            <Hero />
+          </main>
+        </>
       )}
     </>
   )
