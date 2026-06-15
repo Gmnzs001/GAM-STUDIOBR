@@ -16,6 +16,7 @@ export default function CTASection() {
     )
     window.open(`https://wa.me/5562981147673?text=${msg}`, '_blank')
     setSent(true)
+    setTimeout(() => setSent(false), 3000)
   }
 
   return (
@@ -74,6 +75,7 @@ export default function CTASection() {
             <input
               type="text"
               placeholder="Seu nome"
+              aria-label="Seu nome"
               required
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -82,6 +84,7 @@ export default function CTASection() {
             <input
               type="email"
               placeholder="Seu email"
+              aria-label="Seu email"
               required
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -90,6 +93,7 @@ export default function CTASection() {
           </div>
           <textarea
             placeholder="Conte sobre seu projeto..."
+            aria-label="Mensagem sobre seu projeto"
             required
             rows={4}
             value={form.message}
