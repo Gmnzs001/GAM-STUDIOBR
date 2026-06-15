@@ -12,7 +12,7 @@ export default function SectionDivider() {
       <motion.div
         className="h-px bg-[#E02020]"
         initial={{ width: 0, opacity: 0 }}
-        animate={inView ? { width: 100, opacity: 1 } : {}}
+        animate={inView ? { width: '100%', opacity: 1 } : {}}
         transition={{ duration: 0.9, ease: 'easeInOut' }}
       />
     </div>
