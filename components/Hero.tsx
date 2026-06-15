@@ -176,8 +176,8 @@ export default function Hero() {
             href="https://wa.me/5562981147673"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center bg-[#E02020] text-white font-bold px-8 py-4 rounded-lg text-base hover:bg-[#C01010] transition-colors"
-            style={{ boxShadow: '0 0 32px rgba(224,32,32,0.35)', animation: 'pulse 2s infinite' }}
+            className="inline-flex items-center justify-center bg-[#E02020] text-white font-bold px-8 py-4 rounded-lg text-base hover:bg-[#C01010] transition-colors animate-pulse"
+            style={{ boxShadow: '0 0 32px rgba(224,32,32,0.35)' }}
           >
             Falar com a GAM Studio
           </a>
