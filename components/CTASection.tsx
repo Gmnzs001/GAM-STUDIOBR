@@ -1,10 +1,11 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion, useInView } from 'framer-motion'
 
 export default function CTASection() {
   const ref = useRef<HTMLElement>(null)
+  const sentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const inView = useInView(ref, { once: true, margin: '-60px' })
   const [form, setForm] = useState({ name: '', email: '', message: '' })
   const [sent, setSent] = useState(false)
@@ -16,8 +17,14 @@ export default function CTASection() {
     )
     window.open(`https://wa.me/5562981147673?text=${msg}`, '_blank')
     setSent(true)
-    setTimeout(() => setSent(false), 3000)
+    sentTimerRef.current = setTimeout(() => setSent(false), 3000)
   }
+
+  useEffect(() => {
+    return () => {
+      if (sentTimerRef.current) clearTimeout(sentTimerRef.current)
+    }
+  }, [])
 
   return (
     <section ref={ref} id="contato" className="relative py-24 px-6 overflow-hidden">
