@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import Image from 'next/image'
 import gsap from 'gsap'
 import ScrollTrigger from 'gsap/ScrollTrigger'
 
@@ -229,23 +230,45 @@ export default function AboutContent() {
               </div>
             </div>
 
-            {/* Right — decorative year (desktop only) */}
+            {/* Right — founder photo (desktop only, GSAP parallax via data-parallax) */}
             <div
               data-parallax="year"
-              className="hidden lg:block select-none pointer-events-none"
+              className="hidden lg:flex flex-col items-end gap-4 flex-shrink-0"
             >
-              <span
-                className="block font-black text-[#E02020] leading-none"
+              <div
+                className="relative w-[280px] h-[380px] rounded-2xl overflow-hidden"
                 style={{
-                  fontSize: 'clamp(5rem, 12vw, 14rem)',
-                  opacity: 0.07,
-                  writingMode: 'vertical-rl',
-                  transform: 'rotate(180deg)',
-                  letterSpacing: '-0.04em',
+                  boxShadow:
+                    '0 0 0 1px rgba(224,32,32,0.18), 0 0 44px rgba(224,32,32,0.09), 0 20px 56px rgba(0,0,0,0.55)',
                 }}
               >
-                2020
-              </span>
+                {/* Extra size so GSAP translateY doesn't reveal edges */}
+                <div className="absolute inset-[-8%]">
+                  <Image
+                    src="/gustavo.webp"
+                    alt="Gustavo, fundador da GAM Studio"
+                    fill
+                    className="object-cover object-top"
+                    sizes="280px"
+                  />
+                </div>
+                {/* Bottom vignette */}
+                <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#0A0A0A]/70 to-transparent pointer-events-none" />
+                {/* Red corner glow */}
+                <div
+                  className="absolute -top-10 -right-10 w-32 h-32 rounded-full blur-3xl pointer-events-none"
+                  style={{ background: 'rgba(224,32,32,0.16)' }}
+                />
+              </div>
+
+              {/* Caption */}
+              <div className="flex items-center gap-3 pr-1">
+                <div className="w-4 h-px bg-[#E02020]/60" />
+                <p className="text-[#575760] text-[11px] tracking-[0.3em] uppercase font-medium">
+                  Gustavo · Fundador
+                </p>
+                <div className="w-4 h-px bg-[#E02020]/60" />
+              </div>
             </div>
           </div>
         </div>

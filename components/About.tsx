@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import Image from 'next/image'
 import { motion, useInView, useScroll, useTransform } from 'framer-motion'
 
 const STATS = [
@@ -109,64 +110,48 @@ export default function About() {
             ))}
           </div>
 
-          {/* Right: dark visual card */}
+          {/* Right: founder photo */}
           <motion.div
-            className="relative h-[420px] rounded-2xl overflow-hidden border border-[#222222]"
             initial={{ opacity: 0, x: 40 }}
             animate={headInView ? { opacity: 1, x: 0 } : {}}
             transition={{ duration: 0.65, delay: 0.22 }}
           >
-            {/* Parallax bg */}
-            <motion.div
-              className="absolute inset-[-12%]"
-              style={{
-                y: bgY,
-                background: 'linear-gradient(135deg, #180505 0%, #0A0000 50%, #0A0A0A 100%)',
-              }}
-            />
-
-            {/* Red grid */}
+            {/* Photo with parallax + glow */}
             <div
-              className="absolute inset-0 opacity-[0.09]"
+              className="relative h-[480px] rounded-2xl overflow-hidden"
               style={{
-                backgroundImage:
-                  'linear-gradient(rgba(224,32,32,1) 1px, transparent 1px), linear-gradient(90deg, rgba(224,32,32,1) 1px, transparent 1px)',
-                backgroundSize: '38px 38px',
+                boxShadow:
+                  '0 0 0 1px rgba(224,32,32,0.20), 0 0 52px rgba(224,32,32,0.10), 0 24px 64px rgba(0,0,0,0.50)',
               }}
-            />
+            >
+              {/* Parallax image layer — oversized to avoid gaps on shift */}
+              <motion.div className="absolute inset-[-10%]" style={{ y: bgY }}>
+                <Image
+                  src="/gustavo.webp"
+                  alt="Gustavo, fundador da GAM Studio"
+                  fill
+                  className="object-cover object-top"
+                  sizes="(max-width: 1024px) 100vw, 420px"
+                  priority
+                />
+              </motion.div>
 
-            {/* Corner glow */}
-            <div
-              className="absolute -top-16 -right-16 w-48 h-48 rounded-full opacity-20 blur-3xl"
-              style={{ background: '#E02020' }}
-            />
+              {/* Bottom vignette */}
+              <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#0A0A0A]/75 to-transparent pointer-events-none" />
 
-            {/* Content */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-0">
+              {/* Red corner glow */}
               <div
-                className="font-black leading-none select-none"
-                style={{ fontSize: 'clamp(5rem, 12vw, 8rem)', color: 'rgba(255,255,255,0.05)' }}
-              >
-                GAM<span style={{ color: '#E02020', opacity: 0.25 }}>.</span>
-              </div>
+                className="absolute -top-12 -right-12 w-40 h-40 rounded-full blur-3xl pointer-events-none"
+                style={{ background: 'rgba(224,32,32,0.18)' }}
+              />
+            </div>
 
-              <div className="text-[#E02020] text-[11px] tracking-[0.5em] uppercase font-semibold mt-1">
-                Studio
-              </div>
-
-              <div className="mt-4 flex items-center gap-3">
-                <div className="w-8 h-px bg-[#E02020]/40" />
-                <div className="w-1.5 h-1.5 rounded-full bg-[#E02020]" />
-                <div className="w-8 h-px bg-[#E02020]/40" />
-              </div>
-
-              <div className="mt-5 text-[#C0C0C8] text-[11px] tracking-[0.4em] uppercase font-medium">
-                BR · USA · EUR
-              </div>
-
-              <div className="mt-2 text-[#767680] text-[10px] tracking-[0.3em] uppercase">
-                desde 2020
-              </div>
+            {/* Caption */}
+            <div className="mt-4 flex items-center gap-3">
+              <div className="w-6 h-px bg-[#E02020]" />
+              <p className="text-[#767680] text-[11px] tracking-[0.28em] uppercase font-medium">
+                Gustavo — Fundador, GAM Studio
+              </p>
             </div>
           </motion.div>
         </div>
