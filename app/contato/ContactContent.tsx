@@ -129,7 +129,7 @@ export default function ContactContent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({
-          access_key: 'COLE_SUA_ACCESS_KEY_AQUI',
+          access_key: '318470fc-e955-44fd-99f1-8fe61f0c6d34',
           subject: `Novo contato: ${fields.name}${fields.service ? ` — ${fields.service}` : ''}`,
           from_name: 'GAM Studio — Site',
           name: fields.name,

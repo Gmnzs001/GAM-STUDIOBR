@@ -7,7 +7,7 @@ import Magnetic from '@/components/Magnetic'
 
 // ─── Web3Forms ────────────────────────────────────────────────────────────────
 // Crie sua chave gratuita em https://web3forms.com e cole abaixo
-const WEB3FORMS_KEY = 'COLE_SUA_ACCESS_KEY_AQUI'
+const WEB3FORMS_KEY = '318470fc-e955-44fd-99f1-8fe61f0c6d34'
 const WA_URL = 'https://api.whatsapp.com/send/?phone=5562992589599&text=Ol%C3%A1%21+Vim+pelo+site+e+gostaria+de+fazer+um+or%C3%A7amento.'
 
 const SERVICES_TICKER = [
