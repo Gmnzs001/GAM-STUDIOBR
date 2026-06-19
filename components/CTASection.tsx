@@ -8,7 +8,7 @@ import Magnetic from '@/components/Magnetic'
 // ─── Web3Forms ────────────────────────────────────────────────────────────────
 // Crie sua chave gratuita em https://web3forms.com e cole abaixo
 const WEB3FORMS_KEY = 'COLE_SUA_ACCESS_KEY_AQUI'
-const WA_URL = 'https://api.whatsapp.com/send/?phone=5562981147673&text=Ol%C3%A1%21+Vim+pelo+site+e+gostaria+de+fazer+um+or%C3%A7amento.'
+const WA_URL = 'https://api.whatsapp.com/send/?phone=5562992589599&text=Ol%C3%A1%21+Vim+pelo+site+e+gostaria+de+fazer+um+or%C3%A7amento.'
 
 const SERVICES_TICKER = [
   'Criação de Sites', 'SEO', 'Agentes IA', 'Google ADS',
@@ -174,7 +174,7 @@ export default function CTASection() {
               <span className="text-[#E02020]">próximo nível</span>?
             </motion.h2>
             <motion.p
-              className="text-[#A0A0A0] text-sm"
+              className="text-[#C0C0C8] text-sm"
               initial={{ opacity: 0 }}
               animate={inView ? { opacity: 1 } : {}}
               transition={{ duration: 0.45, delay: 0.2 }}
@@ -208,7 +208,7 @@ export default function CTASection() {
                   </div>
                   <div>
                     <p className="text-xl font-bold text-white mb-1">Mensagem enviada!</p>
-                    <p className="text-[#A0A0A0] text-sm">Retornaremos em até 24h. Enquanto isso, fale no WhatsApp.</p>
+                    <p className="text-[#C0C0C8] text-sm">Retornaremos em até 24h. Enquanto isso, fale no WhatsApp.</p>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-3">
                     <Magnetic strength={0.22}>
@@ -224,7 +224,7 @@ export default function CTASection() {
                     <Magnetic strength={0.22}>
                       <button
                         onClick={reset}
-                        className="border border-[#333333] text-[#A0A0A0] text-sm font-medium px-6 py-3 rounded-lg hover:border-[#555555] hover:text-white transition-colors"
+                        className="border border-[#333333] text-[#C0C0C8] text-sm font-medium px-6 py-3 rounded-lg hover:border-[#555555] hover:text-white transition-colors"
                       >
                         Nova mensagem
                       </button>
@@ -291,7 +291,7 @@ export default function CTASection() {
                         value={fields.service}
                         onChange={set('service')}
                         onBlur={blur('service')}
-                        className={`${inputCls(errors.service)} ${!fields.service ? 'text-[#444444]' : ''}`}
+                        className={`${inputCls(errors.service)} ${!fields.service ? 'text-[#767680]' : ''}`}
                       >
                         <option value="" disabled>Serviço de interesse *</option>
                         {SERVICE_OPTIONS.map((s) => (
@@ -345,10 +345,10 @@ export default function CTASection() {
                     </button>
                   </Magnetic>
 
-                  <p className="text-center text-[#444444] text-xs mt-1">
+                  <p className="text-center text-[#767680] text-xs mt-1">
                     Ou fale direto:{' '}
                     <a href={WA_URL} target="_blank" rel="noopener noreferrer" className="text-[#E02020] hover:underline">
-                      WhatsApp 62 98114-7673
+                      WhatsApp 62 99258-9599
                     </a>
                   </p>
                 </motion.form>
@@ -367,17 +367,17 @@ export default function CTASection() {
               href={WA_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 text-sm text-[#A0A0A0] hover:text-white transition-colors"
+              className="flex items-center gap-2 text-sm text-[#C0C0C8] hover:text-white transition-colors"
             >
               <span className="text-[#E02020] font-semibold">WhatsApp</span>
-              <span>62 98114-7673</span>
+              <span>62 99258-9599</span>
             </a>
             <div className="hidden sm:block w-px h-4 bg-[#2A2A2A]" />
             <a
               href="https://instagram.com/gamstudio.br"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 text-sm text-[#A0A0A0] hover:text-white transition-colors"
+              className="flex items-center gap-2 text-sm text-[#C0C0C8] hover:text-white transition-colors"
             >
               <span className="text-[#E02020] font-semibold">Instagram</span>
               <span>@gamstudio.br</span>

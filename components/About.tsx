@@ -47,10 +47,10 @@ export default function About() {
     <section
       ref={sectionRef}
       id="sobre"
-      className="py-24 px-6 overflow-hidden"
+      className="relative py-24 px-6 overflow-hidden"
       style={{ background: 'linear-gradient(180deg, #121214 0%, #0E0E10 100%)' }}
     >
-      <div className="max-w-7xl mx-auto">
+      <div className="relative z-20 max-w-7xl mx-auto">
 
         {/* ── Two-column: text + visual ── */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-10 lg:gap-16 items-start">
@@ -80,7 +80,7 @@ export default function About() {
             </motion.h2>
 
             <motion.p
-              className="text-[#A0A0A0] text-base leading-relaxed max-w-lg mb-10"
+              className="text-[#C0C0C8] text-base leading-relaxed max-w-lg mb-10"
               initial={{ opacity: 0, y: 18 }}
               animate={headInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.5, delay: 0.18 }}
@@ -104,12 +104,12 @@ export default function About() {
                 transition={{ duration: 0.4, delay: 0.28 + i * 0.08 }}
               >
                 <div className="w-1.5 h-1.5 rounded-full bg-[#E02020] flex-shrink-0" />
-                <span className="text-[#A0A0A0] text-sm">{item}</span>
+                <span className="text-[#C0C0C8] text-sm">{item}</span>
               </motion.div>
             ))}
           </div>
 
-          {/* Right: parallax visual panel */}
+          {/* Right: dark visual card */}
           <motion.div
             className="relative h-[420px] rounded-2xl overflow-hidden border border-[#222222]"
             initial={{ opacity: 0, x: 40 }}
@@ -160,11 +160,11 @@ export default function About() {
                 <div className="w-8 h-px bg-[#E02020]/40" />
               </div>
 
-              <div className="mt-5 text-[#A0A0A0] text-[11px] tracking-[0.4em] uppercase font-medium">
+              <div className="mt-5 text-[#C0C0C8] text-[11px] tracking-[0.4em] uppercase font-medium">
                 BR · USA · EUR
               </div>
 
-              <div className="mt-2 text-[#444444] text-[10px] tracking-[0.3em] uppercase">
+              <div className="mt-2 text-[#767680] text-[10px] tracking-[0.3em] uppercase">
                 desde 2020
               </div>
             </div>
@@ -193,7 +193,7 @@ export default function About() {
               >
                 <Counter value={stat.value} suffix={stat.suffix} />
               </div>
-              <div className="text-[#A0A0A0] text-sm tracking-wide">{stat.label}</div>
+              <div className="text-[#C0C0C8] text-sm tracking-wide">{stat.label}</div>
             </motion.div>
           ))}
         </div>

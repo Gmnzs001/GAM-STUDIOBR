@@ -52,7 +52,7 @@
   --secondary: #1A1A1A;
   --secondary-foreground: #FFFFFF;
   --muted: #1A1A1A;
-  --muted-foreground: #A0A0A0;
+  --muted-foreground: #B8B8C0;
   --accent: #E02020;
   --accent-foreground: #FFFFFF;
   --destructive: oklch(0.577 0.245 27.325);
@@ -78,6 +78,11 @@
   body {
     @apply bg-background text-foreground;
     overflow-x: hidden;
+    font-size: clamp(1rem, 0.5vw + 0.875rem, 1.125rem);
+    line-height: 1.65;
+  }
+  p {
+    line-height: 1.7;
   }
   html {
     @apply font-sans;

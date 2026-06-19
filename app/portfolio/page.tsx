@@ -46,7 +46,7 @@ export default function PortfolioPage() {
               <span className="text-[#E02020]">Portfólio</span>
             </h1>
 
-            <p className="text-[#A0A0A0] text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed mb-8">
+            <p className="text-[#C0C0C8] text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed mb-8">
               Cada projeto é uma história de crescimento. Explore os resultados que entregamos para
               marcas em 3 países.
             </p>
@@ -60,7 +60,7 @@ export default function PortfolioPage() {
               ].map((s) => (
                 <div key={s.label} className="text-center">
                   <div className="text-3xl font-black text-white">{s.value}</div>
-                  <div className="text-[#444444] text-xs mt-0.5 uppercase tracking-widest">
+                  <div className="text-[#767680] text-xs mt-0.5 uppercase tracking-widest">
                     {s.label}
                   </div>
                 </div>
@@ -70,7 +70,7 @@ export default function PortfolioPage() {
 
           {/* Scroll cue */}
           <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-40">
-            <span className="text-[#555555] text-[10px] uppercase tracking-widest">
+            <span className="text-[#888892] text-[10px] uppercase tracking-widest">
               Explorar cases
             </span>
             <div className="w-px h-8 bg-gradient-to-b from-[#555555] to-transparent animate-pulse" />

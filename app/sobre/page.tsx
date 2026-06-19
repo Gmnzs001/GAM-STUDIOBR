@@ -73,7 +73,7 @@ export default function SobrePage() {
               {['Desde 2020', 'Goiânia · BR', 'USA · EUR', 'Marketing & Tech'].map((tag) => (
                 <span
                   key={tag}
-                  className="text-xs text-[#555555] border border-[#1E1E1E] px-4 py-1.5 rounded-full"
+                  className="text-xs text-[#888892] border border-[#1E1E1E] px-4 py-1.5 rounded-full"
                 >
                   {tag}
                 </span>

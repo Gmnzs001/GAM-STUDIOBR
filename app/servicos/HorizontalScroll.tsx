@@ -188,7 +188,7 @@ const SERVICES: Service[] = [
 ]
 
 const WA_BASE =
-  'https://api.whatsapp.com/send/?phone=5562981147673&text='
+  'https://api.whatsapp.com/send/?phone=5562992589599&text='
 
 function waLink(service: Service) {
   const msg = encodeURIComponent(
@@ -223,7 +223,7 @@ function ServicePanel({ service }: { service: Service }) {
             <span key={i} className="block">{line}</span>
           ))}
         </h2>
-        <p className="mt-5 text-[#666666] text-sm uppercase tracking-[0.25em] font-medium">
+        <p className="mt-5 text-[#9898A4] text-sm uppercase tracking-[0.25em] font-medium">
           {service.tagline}
         </p>
       </div>
@@ -233,13 +233,13 @@ function ServicePanel({ service }: { service: Service }) {
 
       {/* Right column — content */}
       <div className="relative z-10 flex-1 flex flex-col justify-center max-w-lg">
-        <p className="text-[#A0A0A0] text-base leading-relaxed mb-8">
+        <p className="text-[#C0C0C8] text-base leading-relaxed mb-8">
           {service.description}
         </p>
 
         <ul className="space-y-3 mb-10">
           {service.includes.map((item, i) => (
-            <li key={i} className="flex items-start gap-3 text-sm text-[#666666]">
+            <li key={i} className="flex items-start gap-3 text-sm text-[#9898A4]">
               <span className="text-[#E02020] mt-0.5 shrink-0 font-bold">→</span>
               <span>{item}</span>
             </li>
@@ -282,13 +282,13 @@ function ServiceCard({ service, index }: { service: Service; index: number }) {
       <h2 className="text-4xl font-black tracking-tight leading-[0.9] text-white mb-3">
         {service.name.join(' ')}
       </h2>
-      <p className="text-[#555555] text-xs uppercase tracking-widest mb-6">{service.tagline}</p>
+      <p className="text-[#888892] text-xs uppercase tracking-widest mb-6">{service.tagline}</p>
 
-      <p className="text-[#A0A0A0] text-sm leading-relaxed mb-7">{service.description}</p>
+      <p className="text-[#C0C0C8] text-sm leading-relaxed mb-7">{service.description}</p>
 
       <ul className="space-y-3 mb-8">
         {service.includes.map((item, i) => (
-          <li key={i} className="flex items-start gap-3 text-sm text-[#666666]">
+          <li key={i} className="flex items-start gap-3 text-sm text-[#9898A4]">
             <span className="text-[#E02020] shrink-0 font-bold mt-0.5">→</span>
             {item}
           </li>

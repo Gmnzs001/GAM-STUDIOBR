@@ -14,7 +14,7 @@ const NAV_LINKS = [
 ]
 
 const WA_LINK =
-  'https://api.whatsapp.com/send/?phone=5562981147673&text=Ol%C3%A1%21+Vim+pelo+site+e+gostaria+de+fazer+um+or%C3%A7amento.'
+  'https://api.whatsapp.com/send/?phone=5562992589599&text=Ol%C3%A1%21+Vim+pelo+site+e+gostaria+de+fazer+um+or%C3%A7amento.'
 
 // ─── Magnetic CTA button ────────────────────────────────────────────────────
 function MagneticCTA({ className, mobile = false }: { className?: string; mobile?: boolean }) {
@@ -101,7 +101,7 @@ export default function Navbar() {
 
   const linkClass = (link: typeof NAV_LINKS[0]) =>
     `text-sm font-medium tracking-wide uppercase transition-colors duration-200 ${
-      isActive(link) ? 'text-[#E02020]' : 'text-[#A0A0A0] hover:text-white'
+      isActive(link) ? 'text-[#E02020]' : 'text-[#C0C0C8] hover:text-white'
     }`
 
   return (

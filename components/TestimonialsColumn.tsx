@@ -39,7 +39,7 @@ export const TestimonialsColumn = (props: {
                   "
                 </div>
 
-                <p className="text-[#D0D0D0] text-sm leading-relaxed mb-5 relative z-10">
+                <p className="text-[#E8E8EC] text-sm leading-relaxed mb-5 relative z-10">
                   "{text}"
                 </p>
 
@@ -49,7 +49,7 @@ export const TestimonialsColumn = (props: {
                   </div>
                   <div>
                     <div className="text-white font-semibold text-sm leading-tight">{name}</div>
-                    <div className="text-[#666666] text-xs mt-0.5">{role}</div>
+                    <div className="text-[#9898A4] text-xs mt-0.5">{role}</div>
                   </div>
                 </div>
 

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Navbar from '@/components/Navbar'
 import { CinematicFooter } from '@/components/CinematicFooter'
 import HorizontalScroll from './HorizontalScroll'
+import ServicesTable   from './ServicesTable'
 
 export const metadata: Metadata = {
   title: 'Serviços',
@@ -55,20 +56,17 @@ export default function ServicosPage() {
             >
               Nossa
               <br />
-              <span
-                className="text-transparent"
-                style={{ WebkitTextStroke: '1px rgba(255,255,255,0.15)' }}
-              >
+              <span className="text-[#E02020]">
                 Expertise
               </span>
             </h1>
 
-            <p className="mt-8 text-[#666666] text-base md:text-lg max-w-xl mx-auto leading-relaxed">
+            <p className="mt-8 text-[#9898A4] text-base md:text-lg max-w-xl mx-auto leading-relaxed">
               12 serviços integrados — da estratégia à execução — para construir, escalar e
               consolidar sua presença digital em qualquer mercado.
             </p>
 
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-3 text-xs text-[#444444] font-mono uppercase tracking-widest">
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-3 text-xs text-[#767680] font-mono uppercase tracking-widest">
               <span>12 serviços</span>
               <span className="text-[#E02020]">✦</span>
               <span>BR · USA · EUR</span>
@@ -83,6 +81,9 @@ export default function ServicosPage() {
             <div className="w-px h-12 bg-gradient-to-b from-[#333333] to-transparent" />
           </div>
         </section>
+
+        {/* ── Services table: quick overview of all 12 ───────────────────────── */}
+        <ServicesTable />
 
         {/* ── Services: desktop = horizontal, mobile = stacked ──────────────── */}
         <HorizontalScroll />

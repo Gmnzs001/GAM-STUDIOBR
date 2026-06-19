@@ -64,7 +64,7 @@ export default function ContatoPage() {
               <br />
               <span className="text-[#E02020]">conversar.</span>
             </h1>
-            <p className="text-[#555555] text-lg lg:text-xl max-w-xl leading-relaxed">
+            <p className="text-[#888892] text-lg lg:text-xl max-w-xl leading-relaxed">
               Sua próxima grande ideia começa aqui. Preencha o formulário ou chame direto no WhatsApp — respondemos rápido.
             </p>
           </div>

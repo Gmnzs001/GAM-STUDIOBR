@@ -75,7 +75,7 @@ function StatBlock({ value, suffix, label }: { value: number; suffix: string; la
         <span ref={numRef}>0</span>
         <span className="text-[#E02020]">{suffix}</span>
       </div>
-      <p className="text-[#555555] text-sm uppercase tracking-[0.2em] mt-2 font-medium">{label}</p>
+      <p className="text-[#888892] text-sm uppercase tracking-[0.2em] mt-2 font-medium">{label}</p>
     </div>
   )
 }
@@ -210,13 +210,13 @@ export default function AboutContent() {
               </h2>
 
               <div className="space-y-6">
-                <p data-reveal className="text-[#888888] text-lg leading-relaxed">
+                <p data-reveal className="text-[#B2B2BC] text-lg leading-relaxed">
                   A <span className="text-white font-semibold">GAM Studio</span> nasceu em 2020 com uma convicção clara: marcas brasileiras merecem presença digital no mesmo nível das melhores do mundo. O que começou como um projeto de design e desenvolvimento em Goiânia se tornou uma agência completa de marketing, mídia e tecnologia.
                 </p>
-                <p data-reveal className="text-[#888888] text-lg leading-relaxed">
+                <p data-reveal className="text-[#B2B2BC] text-lg leading-relaxed">
                   Hoje atendemos clientes no <span className="text-white font-semibold">Brasil, nos Estados Unidos e na Europa</span> — unindo design de alto nível, estratégia de crescimento e inteligência artificial para construir marcas que competem globalmente.
                 </p>
-                <p data-reveal className="text-[#888888] text-lg leading-relaxed">
+                <p data-reveal className="text-[#B2B2BC] text-lg leading-relaxed">
                   Não somos uma agência de serviços genéricos. Somos parceiros estratégicos de longo prazo — <span className="text-white font-semibold">obcecados por resultado</span> e comprometidos com a transformação real dos negócios que nos escolhem.
                 </p>
               </div>
@@ -224,7 +224,7 @@ export default function AboutContent() {
               {/* Flags */}
               <div data-reveal className="flex items-center gap-6 mt-10">
                 {['🇧🇷 Brasil', '🇺🇸 USA', '🇪🇺 Europa'].map((f) => (
-                  <span key={f} className="text-[#555555] text-sm font-medium">{f}</span>
+                  <span key={f} className="text-[#888892] text-sm font-medium">{f}</span>
                 ))}
               </div>
             </div>
@@ -257,7 +257,7 @@ export default function AboutContent() {
       <section ref={statsRef} className="bg-[#080808] border-y border-[#161616] py-20 lg:py-28">
         <div className="max-w-7xl mx-auto px-6 lg:px-12">
           {/* Label */}
-          <p className="text-[#333333] text-xs uppercase tracking-[0.4em] font-bold mb-14">
+          <p className="text-[#575760] text-xs uppercase tracking-[0.4em] font-bold mb-14">
             Números que falam por si
           </p>
 
@@ -286,7 +286,7 @@ export default function AboutContent() {
               <h3 className="text-3xl lg:text-4xl font-black text-white leading-tight mb-5">
                 Transformar presença digital em <span className="text-[#E02020]">crescimento real.</span>
               </h3>
-              <p className="text-[#666666] text-base leading-relaxed">
+              <p className="text-[#9898A4] text-base leading-relaxed">
                 Conectamos marcas às suas audiências com design, estratégia e tecnologia. Cada projeto é uma oportunidade de criar algo que vai além do estético — que gera impacto mensurável nos resultados do negócio.
               </p>
             </div>
@@ -299,7 +299,7 @@ export default function AboutContent() {
               <h3 className="text-3xl lg:text-4xl font-black text-white leading-tight mb-5">
                 Ser a agência de referência para quem quer <span className="text-[#E02020]">competir globalmente.</span>
               </h3>
-              <p className="text-[#666666] text-base leading-relaxed">
+              <p className="text-[#9898A4] text-base leading-relaxed">
                 Queremos que nossos clientes olhem para suas marcas daqui a 5 anos e reconheçam que a parceria com a GAM foi um divisor de águas. Presente em 3 países, nosso objetivo é continuar expandindo fronteiras junto com quem acredita no poder do digital.
               </p>
             </div>
@@ -377,7 +377,7 @@ export default function AboutContent() {
                     <p className="text-xl lg:text-2xl font-black text-white mb-4 leading-tight">
                       {v.headline}
                     </p>
-                    <p className="text-[#666666] text-base lg:text-lg leading-relaxed max-w-lg">
+                    <p className="text-[#9898A4] text-base lg:text-lg leading-relaxed max-w-lg">
                       {v.body}
                     </p>
                   </div>
@@ -417,7 +417,7 @@ export default function AboutContent() {
                 <h4 className="text-white font-black text-xl lg:text-2xl leading-tight mb-4">
                   {d.title}
                 </h4>
-                <p className="text-[#555555] text-sm leading-relaxed">{d.desc}</p>
+                <p className="text-[#888892] text-sm leading-relaxed">{d.desc}</p>
               </div>
             ))}
           </div>
@@ -445,12 +445,12 @@ export default function AboutContent() {
             <br />
             juntos.
           </h2>
-          <p className="text-[#666666] text-lg leading-relaxed mb-12 max-w-xl mx-auto">
+          <p className="text-[#9898A4] text-lg leading-relaxed mb-12 max-w-xl mx-auto">
             Uma conversa de 30 minutos pode mudar o rumo da sua marca. Sem compromisso — só clareza sobre o que você precisa e como podemos ajudar.
           </p>
 
           <a
-            href="https://api.whatsapp.com/send/?phone=5562981147673&text=Ol%C3%A1%2C+vim+pela+p%C3%A1gina+Sobre+e+gostaria+de+fazer+um+or%C3%A7amento!"
+            href="https://api.whatsapp.com/send/?phone=5562992589599&text=Ol%C3%A1%2C+vim+pela+p%C3%A1gina+Sobre+e+gostaria+de+fazer+um+or%C3%A7amento!"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-3 px-10 py-5 bg-[#E02020] text-white font-black text-base rounded-full hover:bg-[#C01010] transition-colors"

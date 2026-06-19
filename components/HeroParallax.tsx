@@ -52,7 +52,7 @@ export const Header = () => (
       Sua marca no <br />
       <span className="text-[#E02020]">próximo nível</span>
     </h1>
-    <p className="max-w-2xl text-base md:text-xl mt-8 text-[#A0A0A0] leading-relaxed">
+    <p className="max-w-2xl text-base md:text-xl mt-8 text-[#C0C0C8] leading-relaxed">
       presença · estrutura · previsibilidade — sites, marketing e presença digital que geram resultado de verdade.
     </p>
   </div>

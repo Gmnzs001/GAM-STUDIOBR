@@ -147,13 +147,13 @@ function Stat({ raw, suffix, label }: typeof STATS[0]) {
       >
         {n}{suffix}
       </span>
-      <span className="text-[#A0A0A0] text-[10px] uppercase tracking-[0.22em]">{label}</span>
+      <span className="text-[#C0C0C8] text-[10px] uppercase tracking-[0.22em]">{label}</span>
     </div>
   )
 }
 
 // ── Hero ───────────────────────────────────────────────────────────────────────
-const WA = 'https://api.whatsapp.com/send/?phone=5562981147673&text=Ol%C3%A1%2C+gostaria+de+fazer+um+or%C3%A7amento!'
+const WA = 'https://api.whatsapp.com/send/?phone=5562992589599&text=Ol%C3%A1%2C+gostaria+de+fazer+um+or%C3%A7amento!'
 
 export default function Hero() {
   const scrambled = useScramble(TARGET, 400)
@@ -169,7 +169,7 @@ export default function Hero() {
 
         {/* Eyebrow */}
         <motion.p
-          className="text-[#A0A0A0] text-[10px] tracking-[0.42em] uppercase mb-7"
+          className="text-[#C0C0C8] text-[10px] tracking-[0.42em] uppercase mb-7"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, delay: 0.2 }}
@@ -196,7 +196,7 @@ export default function Hero() {
 
         {/* Subtitle */}
         <motion.p
-          className="text-[#A0A0A0] text-sm md:text-base tracking-[0.3em] uppercase mb-10"
+          className="text-[#C0C0C8] text-sm md:text-base tracking-[0.3em] uppercase mb-10"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, delay: 0.5 }}
@@ -246,7 +246,7 @@ export default function Hero() {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.55, delay: 1.1 }}
       >
-        <span className="text-[#A0A0A0] text-[9px] tracking-widest uppercase">scroll</span>
+        <span className="text-[#C0C0C8] text-[9px] tracking-widest uppercase">scroll</span>
         <motion.div
           className="w-px h-7 bg-gradient-to-b from-[#E02020] to-transparent"
           animate={{ scaleY: [1, 0.25, 1] }}

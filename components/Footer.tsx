@@ -12,7 +12,7 @@ const NAV_LINKS = [
   { label: 'Contato',     href: '#contato'      },
 ]
 
-const WA_URL = 'https://api.whatsapp.com/send/?phone=5562981147673&text=Ol%C3%A1%2C+gostaria+de+fazer+um+or%C3%A7amento!'
+const WA_URL = 'https://api.whatsapp.com/send/?phone=5562992589599&text=Ol%C3%A1%2C+gostaria+de+fazer+um+or%C3%A7amento!'
 const IG_URL = 'https://instagram.com/gamstudio.br'
 
 export default function Footer() {
@@ -44,7 +44,7 @@ export default function Footer() {
               <a
                 key={link.href}
                 href={link.href}
-                className="text-sm text-[#555555] hover:text-[#E02020] transition-colors font-medium"
+                className="text-sm text-[#888892] hover:text-[#E02020] transition-colors font-medium"
               >
                 {link.label}
               </a>
@@ -58,7 +58,7 @@ export default function Footer() {
                 href={IG_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-4 py-2 rounded-full border border-[#222222] text-[#A0A0A0] hover:border-[#E02020] hover:text-white text-xs font-semibold transition-all duration-200"
+                className="flex items-center gap-2 px-4 py-2 rounded-full border border-[#222222] text-[#C0C0C8] hover:border-[#E02020] hover:text-white text-xs font-semibold transition-all duration-200"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
@@ -91,11 +91,11 @@ export default function Footer() {
           className="mt-8 pt-6 border-t border-[#121212] flex flex-col sm:flex-row items-center justify-between gap-3"
           {...fadeUp(0.24)}
         >
-          <p className="text-xs text-[#333333]">
+          <p className="text-xs text-[#575760]">
             © {new Date().getFullYear()} GAM Studio. Todos os direitos reservados.
           </p>
 
-          <p className="text-xs text-[#333333] flex items-center gap-1.5">
+          <p className="text-xs text-[#575760] flex items-center gap-1.5">
             feito por{' '}
             <a
               href={IG_URL}
@@ -111,7 +111,7 @@ export default function Footer() {
 
           <div className="flex items-center gap-1.5">
             <div className="w-1.5 h-1.5 rounded-full bg-[#E02020]" />
-            <span className="text-xs text-[#333333]">Goiânia · BR · USA · EUR</span>
+            <span className="text-xs text-[#575760]">Goiânia · BR · USA · EUR</span>
           </div>
         </motion.div>
 

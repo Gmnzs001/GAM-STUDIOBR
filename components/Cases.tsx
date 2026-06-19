@@ -64,7 +64,7 @@ function CaseCard({ item }: { item: (typeof CASES)[0] }) {
 
       <div className="absolute inset-0 flex flex-col justify-end p-5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300">
         <h3 className="text-[#E02020] font-bold text-base mb-1">{item.title}</h3>
-        <p className="text-[#A0A0A0] text-sm translate-y-0 sm:translate-y-1 sm:group-hover:translate-y-0 transition-transform duration-300">
+        <p className="text-[#C0C0C8] text-sm translate-y-0 sm:translate-y-1 sm:group-hover:translate-y-0 transition-transform duration-300">
           {item.description}
         </p>
       </div>
@@ -115,7 +115,7 @@ export default function Cases() {
                 className={`px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
                   active === cat
                     ? 'bg-[#E02020] text-white'
-                    : 'bg-[#111111] border border-[#222222] text-[#A0A0A0] hover:border-[#E02020]/40 hover:text-white'
+                    : 'bg-[#111111] border border-[#222222] text-[#C0C0C8] hover:border-[#E02020]/40 hover:text-white'
                 }`}
               >
                 {cat}

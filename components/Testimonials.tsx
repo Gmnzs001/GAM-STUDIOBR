@@ -87,7 +87,7 @@ export default function Testimonials() {
               O que dizem sobre <span className="text-[#E02020]">nós</span>
             </motion.h2>
             <motion.p
-              className="text-[#A0A0A0] text-sm max-w-[220px] md:text-right leading-relaxed"
+              className="text-[#C0C0C8] text-sm max-w-[220px] md:text-right leading-relaxed"
               initial={{ opacity: 0, y: 10 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.45, delay: 0.2 }}

@@ -75,7 +75,7 @@ Convenções para construir o site da GAM Studio em Next.js sem desperdiçar tok
 
 **Footer:** botões de Instagram e WhatsApp (orçamento), crédito "feito por GAMStudioBR com ❤".
 
-**Contatos:** WhatsApp `62981147673` (link no formato `https://api.whatsapp.com/send/?phone=5562981147673`), Instagram `@gamstudio.br`.
+**Contatos:** WhatsApp `62992589599` (link no formato `https://api.whatsapp.com/send/?phone=5562992589599`), Instagram `@gamstudio.br`.
 
 ## Sequência da intro (cinematográfica)
 

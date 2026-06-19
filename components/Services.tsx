@@ -37,7 +37,7 @@ function ServiceCard({ service }: { service: (typeof SERVICES)[0] }) {
         <h3 className="text-white font-bold text-[15px] mb-2 group-hover/card:text-[#E02020] transition-colors duration-300 leading-snug">
           {service.title}
         </h3>
-        <p className="text-[#A0A0A0] text-sm leading-relaxed">{service.desc}</p>
+        <p className="text-[#C0C0C8] text-sm leading-relaxed">{service.desc}</p>
         <div className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-[#E02020] via-[#E02020]/60 to-transparent w-0 group-hover/card:w-full transition-all duration-500" />
       </div>
     </TiltCard>
@@ -78,7 +78,7 @@ export default function Services() {
                 Nossos <span className="text-[#E02020]">Serviços</span>
               </motion.h2>
               <motion.p
-                className="text-[#A0A0A0] text-sm max-w-[240px] md:text-right leading-relaxed"
+                className="text-[#C0C0C8] text-sm max-w-[240px] md:text-right leading-relaxed"
                 initial={{ opacity: 0, y: 10 }}
                 animate={headInView ? { opacity: 1, y: 0 } : {}}
                 transition={{ duration: 0.45, delay: 0.2 }}

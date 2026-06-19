@@ -6,7 +6,7 @@ import Magnetic from '@/components/Magnetic'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const WA_URL =
-  'https://api.whatsapp.com/send/?phone=5562981147673&text=Ol%C3%A1%2C+vim+pelo+site+e+gostaria+de+fazer+um+or%C3%A7amento!'
+  'https://api.whatsapp.com/send/?phone=5562992589599&text=Ol%C3%A1%2C+vim+pelo+site+e+gostaria+de+fazer+um+or%C3%A7amento!'
 const IG_URL = 'https://instagram.com/gamstudio.br'
 
 const SERVICES = [
@@ -33,7 +33,7 @@ const INFO_ITEMS = [
       </svg>
     ),
     label: 'WhatsApp',
-    value: '(62) 98114-7673',
+    value: '(62) 99258-9599',
     href: WA_URL,
   },
   {
@@ -76,7 +76,7 @@ const INFO_ITEMS = [
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-[#888888] text-xs font-semibold uppercase tracking-[0.2em]">
+      <label className="text-[#B2B2BC] text-xs font-semibold uppercase tracking-[0.2em]">
         {label}
       </label>
       {children}
@@ -200,14 +200,14 @@ export default function ContactContent() {
                 </div>
                 <div>
                   <h3 className="text-2xl font-black text-white mb-2">Mensagem enviada!</h3>
-                  <p className="text-[#666666] text-base leading-relaxed max-w-md">
+                  <p className="text-[#9898A4] text-base leading-relaxed max-w-md">
                     Recebemos seu contato e retornaremos em até 24 horas. Se preferir uma resposta mais rápida, fale direto pelo WhatsApp.
                   </p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3 mt-2">
                   <button
                     onClick={() => { setStatus('idle'); setFields({ name: '', email: '', phone: '', company: '', service: '', message: '' }) }}
-                    className="px-6 py-3 border border-[#1E1E1E] text-[#888888] hover:text-white hover:border-[#333333] text-sm font-semibold rounded-xl transition-colors"
+                    className="px-6 py-3 border border-[#1E1E1E] text-[#B2B2BC] hover:text-white hover:border-[#333333] text-sm font-semibold rounded-xl transition-colors"
                   >
                     Enviar outro
                   </button>
@@ -336,7 +336,7 @@ export default function ContactContent() {
                     </p>
                   )}
 
-                  <p className="mt-4 text-[#333333] text-xs">
+                  <p className="mt-4 text-[#575760] text-xs">
                     Respondemos em até 24h úteis. Seus dados não são compartilhados.
                   </p>
                 </div>
@@ -349,7 +349,7 @@ export default function ContactContent() {
 
             {/* CTA direct buttons */}
             <div data-enter className="flex flex-col gap-3">
-              <p className="text-[#333333] text-xs uppercase tracking-[0.3em] font-bold mb-1">
+              <p className="text-[#575760] text-xs uppercase tracking-[0.3em] font-bold mb-1">
                 Prefere falar agora?
               </p>
 
@@ -366,7 +366,7 @@ export default function ContactContent() {
                     <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.553 4.116 1.522 5.847L.057 23.882a.5.5 0 0 0 .612.612l6.035-1.465A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.8 9.8 0 0 1-5.003-1.369l-.359-.214-3.72.903.919-3.638-.234-.374A9.818 9.818 0 0 1 2.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/>
                   </svg>
                   <span>Chamar no WhatsApp</span>
-                  <span className="ml-auto text-white/50 text-xs font-normal">(62) 98114-7673</span>
+                  <span className="ml-auto text-white/50 text-xs font-normal">(62) 99258-9599</span>
                 </a>
               </Magnetic>
 
@@ -375,7 +375,7 @@ export default function ContactContent() {
                   href={IG_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-3 w-full px-5 py-4 border border-[#222222] text-[#A0A0A0] font-bold text-sm rounded-xl hover:border-[#444444] hover:text-white transition-all"
+                  className="flex items-center gap-3 w-full px-5 py-4 border border-[#222222] text-[#C0C0C8] font-bold text-sm rounded-xl hover:border-[#444444] hover:text-white transition-all"
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                     <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
@@ -383,7 +383,7 @@ export default function ContactContent() {
                     <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/>
                   </svg>
                   <span>Seguir no Instagram</span>
-                  <span className="ml-auto text-[#555555] text-xs font-normal">@gamstudio.br</span>
+                  <span className="ml-auto text-[#888892] text-xs font-normal">@gamstudio.br</span>
                 </a>
               </Magnetic>
             </div>
@@ -393,7 +393,7 @@ export default function ContactContent() {
 
             {/* Info list */}
             <div data-enter className="space-y-6">
-              <p className="text-[#333333] text-xs uppercase tracking-[0.3em] font-bold">
+              <p className="text-[#575760] text-xs uppercase tracking-[0.3em] font-bold">
                 Informações
               </p>
               {INFO_ITEMS.map((item) => (
@@ -402,7 +402,7 @@ export default function ContactContent() {
                     {item.icon}
                   </div>
                   <div>
-                    <p className="text-[#444444] text-xs uppercase tracking-wider mb-0.5">{item.label}</p>
+                    <p className="text-[#767680] text-xs uppercase tracking-wider mb-0.5">{item.label}</p>
                     {item.href ? (
                       <a
                         href={item.href}
@@ -425,7 +425,7 @@ export default function ContactContent() {
 
             {/* Mapa embed */}
             <div data-enter>
-              <p className="text-[#333333] text-xs uppercase tracking-[0.3em] font-bold mb-4">
+              <p className="text-[#575760] text-xs uppercase tracking-[0.3em] font-bold mb-4">
                 Onde estamos
               </p>
               <div className="rounded-2xl overflow-hidden border border-[#1E1E1E]" style={{ height: 220 }}>
