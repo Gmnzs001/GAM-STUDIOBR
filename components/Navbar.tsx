@@ -6,11 +6,11 @@ import { usePathname, useRouter } from 'next/navigation'
 import { getLenis } from '@/lib/lenis-ref'
 
 const NAV_LINKS = [
-  { label: 'Início',    href: '/',          anchor: '#home'     },
-  { label: 'Serviços',  href: '/servicos',  anchor: '#servicos' },
-  { label: 'Portfólio', href: '/portfolio', anchor: '#cases'    },
-  { label: 'Sobre',     href: '/sobre',     anchor: '#sobre'    },
-  { label: 'Contato',   href: '/contato',   anchor: '#contato'  },
+  { label: 'Início',    href: '/'          },
+  { label: 'Serviços',  href: '/servicos'  },
+  { label: 'Portfólio', href: '/portfolio' },
+  { label: 'Sobre',     href: '/sobre'     },
+  { label: 'Contato',   href: '/contato'   },
 ]
 
 const WA_LINK =
@@ -58,28 +58,16 @@ export default function Navbar() {
   const router   = useRouter()
   const isHome   = pathname === '/'
 
-  const [scrolled,      setScrolled]      = useState(false)
-  const [menuOpen,      setMenuOpen]      = useState(false)
-  const [activeSection, setActiveSection] = useState('#home')
+  const [scrolled, setScrolled] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
 
-  // ── Scroll detection (home-only: active section tracking) ────────────────
+  // ── Scroll detection ─────────────────────────────────────────────────────
   useEffect(() => {
-    const onScroll = () => {
-      setScrolled(window.scrollY > 10)
-      if (!isHome) return
-      const threshold = window.innerHeight * 0.4
-      let active = '#home'
-      for (const { anchor } of NAV_LINKS) {
-        const el = document.querySelector(anchor)
-        if (!el) continue
-        if (el.getBoundingClientRect().top <= threshold) active = anchor
-      }
-      setActiveSection(active)
-    }
+    const onScroll = () => setScrolled(window.scrollY > 10)
     window.addEventListener('scroll', onScroll, { passive: true })
     onScroll()
     return () => window.removeEventListener('scroll', onScroll)
-  }, [isHome])
+  }, [])
 
   // Lock body scroll when mobile menu is open
   useEffect(() => {
@@ -93,26 +81,21 @@ export default function Navbar() {
       e.preventDefault()
       setMenuOpen(false)
 
-      if (isHome) {
+      // "Início" on the home page → smooth scroll to top
+      if (link.href === '/' && isHome) {
         const lenis = getLenis()
-        if (!lenis) return
-        if (link.anchor === '#home') {
-          lenis.scrollTo(0, { duration: 1.2 })
-        } else {
-          const el = document.querySelector(link.anchor)
-          if (el) lenis.scrollTo(el as HTMLElement, { offset: -64, duration: 1.2 })
-        }
-      } else {
-        router.push(link.href)
+        if (lenis) lenis.scrollTo(0, { duration: 1.2 })
+        return
       }
+
+      router.push(link.href)
     },
     [isHome, router],
   )
 
   // ── Active link check ─────────────────────────────────────────────────────
   const isActive = (link: typeof NAV_LINKS[0]) => {
-    if (isHome) return activeSection === link.anchor
-    if (link.href === '/') return false
+    if (link.href === '/') return pathname === '/'
     return pathname === link.href || pathname.startsWith(link.href + '/')
   }
 
@@ -120,10 +103,6 @@ export default function Navbar() {
     `text-sm font-medium tracking-wide uppercase transition-colors duration-200 ${
       isActive(link) ? 'text-[#E02020]' : 'text-[#A0A0A0] hover:text-white'
     }`
-
-  // ── Resolve href for <a> tag ──────────────────────────────────────────────
-  const resolveHref = (link: typeof NAV_LINKS[0]) =>
-    isHome ? link.anchor : link.href
 
   return (
     <>
@@ -143,7 +122,7 @@ export default function Navbar() {
 
           {/* Logo */}
           <a
-            href={isHome ? '#home' : '/'}
+            href="/"
             onClick={(e) => handleNavClick(e, NAV_LINKS[0])}
             className="flex items-baseline select-none gap-1 opacity-100 hover:opacity-80 transition-opacity duration-200"
           >
@@ -156,7 +135,7 @@ export default function Navbar() {
             {NAV_LINKS.map((link) => (
               <a
                 key={link.href}
-                href={resolveHref(link)}
+                href={link.href}
                 onClick={(e) => handleNavClick(e, link)}
                 className={linkClass(link)}
               >
@@ -207,7 +186,7 @@ export default function Navbar() {
               {NAV_LINKS.map((link, i) => (
                 <motion.a
                   key={link.href}
-                  href={resolveHref(link)}
+                  href={link.href}
                   onClick={(e) => handleNavClick(e, link)}
                   className={`text-3xl font-black tracking-tight py-3 w-full text-center transition-colors duration-200 ${
                     isActive(link) ? 'text-[#E02020]' : 'text-white hover:text-[#E02020]'
