@@ -4,146 +4,200 @@ import { useEffect, useRef, useState } from 'react'
 import { motion, useInView, useScroll, useTransform } from 'framer-motion'
 
 const STATS = [
-  { value: 120, suffix: '+', label: 'Projetos entregues' },
-  { value: 98,  suffix: '%', label: 'Clientes satisfeitos' },
-  { value: 5,   suffix: '+', label: 'Anos de mercado' },
-  { value: 3,   suffix: '',  label: 'Países atendidos' },
+  { value: 120, suffix: '+', label: 'Projetos entregues',   accent: true  },
+  { value: 98,  suffix: '%', label: 'Clientes satisfeitos', accent: false },
+  { value: 5,   suffix: '+', label: 'Anos de mercado',      accent: false },
+  { value: 3,   suffix: '',  label: 'Países atendidos',     accent: false },
 ]
 
 function Counter({ value, suffix }: { value: number; suffix: string }) {
-  const ref = useRef<HTMLSpanElement>(null)
+  const ref    = useRef<HTMLSpanElement>(null)
   const inView = useInView(ref, { once: true })
   const [count, setCount] = useState(0)
 
   useEffect(() => {
     if (!inView) return
     let n = 0
-    const step = Math.max(1, Math.ceil(value / 48))
+    const step = Math.max(1, Math.ceil(value / 52))
     const id = setInterval(() => {
       n = Math.min(n + step, value)
       setCount(n)
       if (n >= value) clearInterval(id)
-    }, 28)
+    }, 26)
     return () => clearInterval(id)
   }, [inView, value])
 
-  return (
-    <span ref={ref} className="tabular-nums">
-      {count}{suffix}
-    </span>
-  )
+  return <span ref={ref} className="tabular-nums">{count}{suffix}</span>
 }
 
 export default function About() {
-  const sectionRef = useRef<HTMLElement>(null)
-  const headRef = useRef<HTMLDivElement>(null)
-  const headInView = useInView(headRef, { once: true, margin: '-60px' })
+  const sectionRef  = useRef<HTMLElement>(null)
+  const headRef     = useRef<HTMLDivElement>(null)
+  const statsRef    = useRef<HTMLDivElement>(null)
+  const headInView  = useInView(headRef,  { once: true, margin: '-80px' })
+  const statsInView = useInView(statsRef, { once: true, margin: '-40px' })
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ['start end', 'end start'],
   })
-  const bgY = useTransform(scrollYProgress, [0, 1], ['-9%', '9%'])
+  const bgY = useTransform(scrollYProgress, [0, 1], ['-10%', '10%'])
 
   return (
-    <section ref={sectionRef} id="sobre" className="py-24 px-6 overflow-hidden">
+    <section
+      ref={sectionRef}
+      id="sobre"
+      className="py-24 px-6 overflow-hidden"
+      style={{ background: 'linear-gradient(180deg, #121214 0%, #0E0E10 100%)' }}
+    >
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+
+        {/* ── Two-column: text + visual ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-10 lg:gap-16 items-start">
 
           {/* Left */}
           <div ref={headRef}>
             <motion.p
-              className="text-[#E02020] text-xs tracking-[0.32em] uppercase font-semibold mb-3"
-              initial={{ opacity: 0, y: 10 }}
+              className="text-[#E02020] text-xs tracking-[0.32em] uppercase font-semibold mb-4"
+              initial={{ opacity: 0, y: 12 }}
               animate={headInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.45 }}
             >
               Quem somos
             </motion.p>
+
             <motion.h2
-              className="text-4xl md:text-5xl font-black text-white mb-5 leading-tight"
-              initial={{ opacity: 0, y: 20 }}
+              className="font-black text-white leading-[1.05] mb-6"
+              style={{ fontSize: 'clamp(2.4rem, 5vw, 4rem)' }}
+              initial={{ opacity: 0, y: 28 }}
               animate={headInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.45, delay: 0.1 }}
+              transition={{ duration: 0.55, delay: 0.08 }}
             >
-              Sua marca com{' '}
-              <span className="text-[#E02020]">presença</span> e{' '}
-              <span className="text-[#E02020]">previsibilidade</span>
+              Agência de marketing,{' '}
+              <span className="text-[#E02020]">mídia</span> e{' '}
+              desenvolvimento{' '}
+              <span className="text-[#E02020]">digital</span>
             </motion.h2>
+
             <motion.p
-              className="text-[#A0A0A0] text-base leading-relaxed mb-8"
-              initial={{ opacity: 0, y: 16 }}
+              className="text-[#A0A0A0] text-base leading-relaxed max-w-lg mb-10"
+              initial={{ opacity: 0, y: 18 }}
               animate={headInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.45, delay: 0.2 }}
+              transition={{ duration: 0.5, delay: 0.18 }}
             >
-              A GAM Studio é uma agência de marketing digital e tecnologia sediada em Goiânia,
-              com projetos no Brasil, Estados Unidos e Europa. Unimos design de alto nível,
-              estratégia de crescimento e inteligência artificial para entregar resultados reais.
+              Nascida em 2020 em Goiânia, a GAM Studio atua no Brasil, nos Estados Unidos
+              e na Europa. Unimos design de alto nível, estratégia de crescimento e
+              inteligência artificial para entregar resultados reais — com presença,
+              estrutura e previsibilidade.
             </motion.p>
 
-            {/* Stats */}
-            <div className="grid grid-cols-2 gap-4">
-              {STATS.map((stat, i) => (
-                <motion.div
-                  key={stat.label}
-                  className="bg-[#111111] border border-[#222222] rounded-xl p-5"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={headInView ? { opacity: 1, y: 0 } : {}}
-                  transition={{ duration: 0.4, delay: 0.28 + i * 0.08 }}
-                >
-                  <div className="text-3xl md:text-4xl font-black text-[#E02020] mb-1">
-                    <Counter value={stat.value} suffix={stat.suffix} />
-                  </div>
-                  <div className="text-[#A0A0A0] text-sm">{stat.label}</div>
-                </motion.div>
-              ))}
-            </div>
+            {[
+              'Design premium com foco em conversão',
+              'Estratégia orientada a dados e resultados',
+              'Atendimento internacional — BR · USA · EUR',
+            ].map((item, i) => (
+              <motion.div
+                key={item}
+                className="flex items-center gap-3 mb-3"
+                initial={{ opacity: 0, x: -16 }}
+                animate={headInView ? { opacity: 1, x: 0 } : {}}
+                transition={{ duration: 0.4, delay: 0.28 + i * 0.08 }}
+              >
+                <div className="w-1.5 h-1.5 rounded-full bg-[#E02020] flex-shrink-0" />
+                <span className="text-[#A0A0A0] text-sm">{item}</span>
+              </motion.div>
+            ))}
           </div>
 
-          {/* Right — parallax visual */}
+          {/* Right: parallax visual panel */}
           <motion.div
-            className="relative h-[460px] rounded-2xl overflow-hidden border border-[#222222]"
+            className="relative h-[420px] rounded-2xl overflow-hidden border border-[#222222]"
             initial={{ opacity: 0, x: 40 }}
             animate={headInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.18 }}
+            transition={{ duration: 0.65, delay: 0.22 }}
           >
+            {/* Parallax bg */}
             <motion.div
               className="absolute inset-[-12%]"
               style={{
                 y: bgY,
-                background: 'linear-gradient(135deg, #1A0000 0%, #111111 40%, #0A0A0A 100%)',
+                background: 'linear-gradient(135deg, #180505 0%, #0A0000 50%, #0A0A0A 100%)',
               }}
             />
-            {/* Red grid overlay */}
+
+            {/* Red grid */}
             <div
-              className="absolute inset-0 opacity-[0.08]"
+              className="absolute inset-0 opacity-[0.09]"
               style={{
                 backgroundImage:
                   'linear-gradient(rgba(224,32,32,1) 1px, transparent 1px), linear-gradient(90deg, rgba(224,32,32,1) 1px, transparent 1px)',
                 backgroundSize: '38px 38px',
               }}
             />
-            {/* Center mark */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center">
-                <div
-                  className="font-black text-white/[0.04] leading-none select-none"
-                  style={{ fontSize: 'clamp(5rem, 14vw, 9rem)' }}
-                >
-                  GAM
-                </div>
-                <div className="text-[#E02020] text-xs tracking-[0.45em] uppercase font-semibold mt-3">
-                  Studio
-                </div>
-                <div className="mt-5 flex items-center justify-center gap-3">
-                  <div className="w-10 h-px bg-[#E02020]/60" />
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#E02020]" />
-                  <div className="w-10 h-px bg-[#E02020]/60" />
-                </div>
+
+            {/* Corner glow */}
+            <div
+              className="absolute -top-16 -right-16 w-48 h-48 rounded-full opacity-20 blur-3xl"
+              style={{ background: '#E02020' }}
+            />
+
+            {/* Content */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-0">
+              <div
+                className="font-black leading-none select-none"
+                style={{ fontSize: 'clamp(5rem, 12vw, 8rem)', color: 'rgba(255,255,255,0.05)' }}
+              >
+                GAM<span style={{ color: '#E02020', opacity: 0.25 }}>.</span>
+              </div>
+
+              <div className="text-[#E02020] text-[11px] tracking-[0.5em] uppercase font-semibold mt-1">
+                Studio
+              </div>
+
+              <div className="mt-4 flex items-center gap-3">
+                <div className="w-8 h-px bg-[#E02020]/40" />
+                <div className="w-1.5 h-1.5 rounded-full bg-[#E02020]" />
+                <div className="w-8 h-px bg-[#E02020]/40" />
+              </div>
+
+              <div className="mt-5 text-[#A0A0A0] text-[11px] tracking-[0.4em] uppercase font-medium">
+                BR · USA · EUR
+              </div>
+
+              <div className="mt-2 text-[#444444] text-[10px] tracking-[0.3em] uppercase">
+                desde 2020
               </div>
             </div>
           </motion.div>
         </div>
+
+        {/* ── Stats strip ── */}
+        <div
+          ref={statsRef}
+          className="mt-16 border-t border-[#222222] grid grid-cols-2 lg:grid-cols-4"
+        >
+          {STATS.map((stat, i) => (
+            <motion.div
+              key={stat.label}
+              className="px-4 py-8 lg:px-8 lg:py-10 border-r border-[#222222] last:border-r-0 [&:nth-child(2)]:border-r-[#222222] max-lg:[&:nth-child(2)]:border-r-0 max-lg:[&:nth-child(odd)]:border-r-[#222222]"
+              initial={{ opacity: 0, y: 32 }}
+              animate={statsInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.55, delay: i * 0.1 }}
+            >
+              <div
+                className="font-black leading-none mb-3"
+                style={{
+                  fontSize: 'clamp(3.5rem, 7vw, 5.5rem)',
+                  color: stat.accent ? '#E02020' : '#FFFFFF',
+                }}
+              >
+                <Counter value={stat.value} suffix={stat.suffix} />
+              </div>
+              <div className="text-[#A0A0A0] text-sm tracking-wide">{stat.label}</div>
+            </motion.div>
+          ))}
+        </div>
+
       </div>
     </section>
   )

@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { motion, useInView, AnimatePresence } from 'framer-motion'
+import { motion, useInView, useMotionValue, useSpring, AnimatePresence } from 'framer-motion'
 
 const CATEGORIES = ['Todos', 'Website', 'Branding', 'ADS', 'Social']
 
@@ -14,10 +14,70 @@ const CASES = [
   { id: 6, title: 'Startup de Tecnologia',          category: 'Branding', description: 'Branding completo para SaaS B2B + motion design.', bg: '#120812' },
 ]
 
+function CaseCard({ item }: { item: (typeof CASES)[0] }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const rx  = useMotionValue(0)
+  const ry  = useMotionValue(0)
+  const srx = useSpring(rx, { stiffness: 320, damping: 28 })
+  const sry = useSpring(ry, { stiffness: 320, damping: 28 })
+
+  const onMove = (e: React.MouseEvent) => {
+    const el = ref.current
+    if (!el) return
+    const r  = el.getBoundingClientRect()
+    rx.set(-(((e.clientY - r.top)  / r.height) - 0.5) * 14)
+    ry.set( (((e.clientX - r.left) / r.width)  - 0.5) * 14)
+  }
+
+  const onLeave = () => { rx.set(0); ry.set(0) }
+
+  return (
+    <motion.div
+      ref={ref}
+      layout
+      initial={{ opacity: 0, scale: 0.92 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.92 }}
+      transition={{ duration: 0.28 }}
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
+      className="group relative rounded-xl overflow-hidden h-52 border border-[#222222] hover:border-[#E02020]/40 transition-colors duration-300"
+      style={{
+        backgroundColor: item.bg,
+        rotateX: srx,
+        rotateY: sry,
+        transformStyle: 'preserve-3d',
+        transformPerspective: 900,
+      }}
+    >
+      <div className="absolute top-4 right-4 z-10">
+        <span className="text-xs font-semibold text-[#E02020] bg-[#E02020]/10 px-3 py-1 rounded-full border border-[#E02020]/20">
+          {item.category}
+        </span>
+      </div>
+
+      <div className="absolute bottom-0 left-0 right-0 p-5">
+        <h3 className="text-white font-bold text-base mb-1 max-sm:opacity-0 group-hover:opacity-0 transition-opacity duration-200">
+          {item.title}
+        </h3>
+      </div>
+
+      <div className="absolute inset-0 flex flex-col justify-end p-5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300">
+        <h3 className="text-[#E02020] font-bold text-base mb-1">{item.title}</h3>
+        <p className="text-[#A0A0A0] text-sm translate-y-0 sm:translate-y-1 sm:group-hover:translate-y-0 transition-transform duration-300">
+          {item.description}
+        </p>
+      </div>
+
+      <div className="absolute bottom-0 left-0 h-px bg-[#E02020] w-0 group-hover:w-full transition-all duration-500" />
+    </motion.div>
+  )
+}
+
 export default function Cases() {
   const [active, setActive] = useState('Todos')
   const headRef = useRef<HTMLDivElement>(null)
-  const inView = useInView(headRef, { once: true, margin: '-60px' })
+  const inView  = useInView(headRef, { once: true, margin: '-60px' })
 
   const filtered = active === 'Todos' ? CASES : CASES.filter((c) => c.category === active)
 
@@ -42,7 +102,6 @@ export default function Cases() {
             Nossos <span className="text-[#E02020]">Cases</span>
           </motion.h2>
 
-          {/* Filter */}
           <motion.div
             className="flex flex-wrap justify-center gap-2"
             initial={{ opacity: 0, y: 10 }}
@@ -68,41 +127,7 @@ export default function Cases() {
         <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           <AnimatePresence mode="popLayout">
             {filtered.map((item) => (
-              <motion.div
-                key={item.id}
-                layout
-                initial={{ opacity: 0, scale: 0.92 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.92 }}
-                transition={{ duration: 0.28 }}
-                className="group relative rounded-xl overflow-hidden h-52 border border-[#222222] hover:border-[#E02020]/40 transition-colors duration-300"
-                style={{ backgroundColor: item.bg }}
-              >
-                {/* Category badge */}
-                <div className="absolute top-4 right-4 z-10">
-                  <span className="text-xs font-semibold text-[#E02020] bg-[#E02020]/10 px-3 py-1 rounded-full border border-[#E02020]/20">
-                    {item.category}
-                  </span>
-                </div>
-
-                {/* Default state content */}
-                <div className="absolute bottom-0 left-0 right-0 p-5">
-                  <h3 className="text-white font-bold text-base mb-1 group-hover:opacity-0 transition-opacity duration-200">
-                    {item.title}
-                  </h3>
-                </div>
-
-                {/* Hover overlay */}
-                <div className="absolute inset-0 flex flex-col justify-end p-5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <h3 className="text-[#E02020] font-bold text-base mb-1">{item.title}</h3>
-                  <p className="text-[#A0A0A0] text-sm translate-y-1 group-hover:translate-y-0 transition-transform duration-300">
-                    {item.description}
-                  </p>
-                </div>
-
-                {/* Bottom line */}
-                <div className="absolute bottom-0 left-0 h-px bg-[#E02020] w-0 group-hover:w-full transition-all duration-500" />
-              </motion.div>
+              <CaseCard key={item.id} item={item} />
             ))}
           </AnimatePresence>
         </motion.div>

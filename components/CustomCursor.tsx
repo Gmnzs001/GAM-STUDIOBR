@@ -1,76 +1,85 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { motion, useMotionValue, useSpring } from 'framer-motion'
 
 export default function CustomCursor() {
-  const cursorRef = useRef<HTMLDivElement>(null)
-  const pos = useRef({ x: -100, y: -100 })
-  const current = useRef({ x: -100, y: -100 })
-  const [isHovering, setIsHovering] = useState(false)
-  const [visible, setVisible] = useState(false)
+  const [visible,  setVisible]  = useState(false)
+  const [hovering, setHovering] = useState(false)
+  const [ready,    setReady]    = useState(false)
+  const readyRef = useRef(false)
+
+  const mx = useMotionValue(-200)
+  const my = useMotionValue(-200)
+  // High stiffness = very fast follow, near zero perceptible lag
+  const sx = useSpring(mx, { stiffness: 700, damping: 40, mass: 0.15 })
+  const sy = useSpring(my, { stiffness: 700, damping: 40, mass: 0.15 })
 
   useEffect(() => {
-    // Only show on pointer:fine devices (not touch)
+    // Touch / pen devices: skip custom cursor
     if (!window.matchMedia('(pointer: fine)').matches) return
-
     setVisible(true)
 
     const onMove = (e: MouseEvent) => {
-      pos.current = { x: e.clientX, y: e.clientY }
+      mx.set(e.clientX)
+      my.set(e.clientY)
+      if (!readyRef.current) { readyRef.current = true; setReady(true) }
     }
 
-    const onEnter = () => setIsHovering(true)
-    const onLeave = () => setIsHovering(false)
+    const onEnter = () => setHovering(true)
+    const onLeave = () => setHovering(false)
 
-    window.addEventListener('mousemove', onMove)
-
-    // Observe DOM changes so newly mounted links get listeners
-    const attachListeners = () => {
-      document.querySelectorAll('a, button').forEach((el) => {
+    const attach = () => {
+      document.querySelectorAll<Element>('a, button').forEach((el) => {
         el.removeEventListener('mouseenter', onEnter)
         el.removeEventListener('mouseleave', onLeave)
         el.addEventListener('mouseenter', onEnter)
         el.addEventListener('mouseleave', onLeave)
       })
     }
-    attachListeners()
-    const observer = new MutationObserver(attachListeners)
-    observer.observe(document.body, { childList: true, subtree: true })
 
-    let rafId: number
-    const animate = () => {
-      current.current.x += (pos.current.x - current.current.x) * 0.12
-      current.current.y += (pos.current.y - current.current.y) * 0.12
-      if (cursorRef.current) {
-        cursorRef.current.style.transform = `translate(${current.current.x}px, ${current.current.y}px)`
-      }
-      rafId = requestAnimationFrame(animate)
-    }
-    rafId = requestAnimationFrame(animate)
+    window.addEventListener('mousemove', onMove)
+    attach()
+
+    const obs = new MutationObserver(attach)
+    obs.observe(document.body, { childList: true, subtree: true })
 
     return () => {
       window.removeEventListener('mousemove', onMove)
-      cancelAnimationFrame(rafId)
-      observer.disconnect()
+      obs.disconnect()
     }
-  }, [])
+  }, [mx, my])
 
   if (!visible) return null
 
   return (
-    <div
-      ref={cursorRef}
+    <motion.div
       className="fixed top-0 left-0 pointer-events-none z-[9999]"
-      style={{ willChange: 'transform' }}
+      style={{ x: sx, y: sy, opacity: ready ? 1 : 0 }}
     >
-      <div
-        className="rounded-full border-2 border-[#E02020] transition-all duration-200 -translate-x-1/2 -translate-y-1/2"
-        style={{
-          width: isHovering ? '44px' : '22px',
-          height: isHovering ? '44px' : '22px',
-          backgroundColor: isHovering ? 'rgba(224,32,32,0.12)' : 'transparent',
-        }}
-      />
-    </div>
+      {/* Center wrapper — offsets the ring's own anchor to the mouse position */}
+      <div className="-translate-x-1/2 -translate-y-1/2">
+        {/* Ring: expands and fills red on hover */}
+        <motion.div
+          className="rounded-full border-[1.5px] border-[#E02020]"
+          animate={{
+            width:           hovering ? 40 : 20,
+            height:          hovering ? 40 : 20,
+            backgroundColor: hovering ? 'rgba(224,32,32,0.10)' : 'rgba(224,32,32,0)',
+          }}
+          transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+        />
+        {/* Center dot: hides when hovering (ring takes over) */}
+        <motion.div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#E02020]"
+          animate={{
+            width:   hovering ? 0  : 4,
+            height:  hovering ? 0  : 4,
+            opacity: hovering ? 0  : 1,
+          }}
+          transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+        />
+      </div>
+    </motion.div>
   )
 }
