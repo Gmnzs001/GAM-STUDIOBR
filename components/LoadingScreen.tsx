@@ -19,6 +19,7 @@ class Particle {
   targetColor: RGB = { r: 255, g: 255, b: 255 }
   colorWeight      = 0
   colorBlendRate   = 0.012
+  drawSize         = 1.5   // set per-particle based on viewport width
 
   lerpColor(): RGB {
     const w = this.colorWeight
@@ -53,7 +54,8 @@ class Particle {
     this.colorWeight = Math.min(this.colorWeight + this.colorBlendRate, 1)
     const { r, g, b } = this.lerpColor()
     ctx.fillStyle = `rgb(${r},${g},${b})`
-    ctx.fillRect(this.pos.x - 0.5, this.pos.y - 0.5, 1.5, 1.5)
+    const h = this.drawSize
+    ctx.fillRect(this.pos.x - h / 2, this.pos.y - h / 2, h, h)
   }
 
   kill(w: number, h: number) {
@@ -142,6 +144,7 @@ export default function LoadingScreen({ onComplete }: { onComplete: () => void }
   const phase3TsRef  = useRef(0)
   const dotCXRef     = useRef(0)
   const dotCYRef     = useRef(0)
+  const drawSizeRef  = useRef(1.5)   // scales with viewport width
   // Cached target sets so resize can rebuild quickly
   const p1Ref        = useRef<Target[]>([])
   const p2Ref        = useRef<Target[]>([])
@@ -181,7 +184,7 @@ export default function LoadingScreen({ onComplete }: { onComplete: () => void }
       return { x: w / 2 + Math.cos(ang) * d, y: h / 2 + Math.sin(ang) * d }
     }
 
-    const applyTargets = (targets: Target[], speedMin: number, speedMax: number) => {
+    const applyTargets = (targets: Target[], speedMin: number, speedMax: number, drawSize = drawSizeRef.current) => {
       const w = canvas.width, h = canvas.height
       for (let i = 0; i < targets.length; i++) {
         let p: Particle
@@ -193,14 +196,15 @@ export default function LoadingScreen({ onComplete }: { onComplete: () => void }
           p.pos.x = pos.x; p.pos.y = pos.y
           particles.push(p)
         }
-        p.maxSpeed      = Math.random() * (speedMax - speedMin) + speedMin
-        p.maxForce      = p.maxSpeed * 0.08
+        p.maxSpeed       = Math.random() * (speedMax - speedMin) + speedMin
+        p.maxForce       = p.maxSpeed * 0.08
         p.colorBlendRate = Math.random() * 0.018 + 0.006
-        p.startColor    = p.lerpColor()
-        p.targetColor   = targets[i].color
-        p.colorWeight   = 0
-        p.target.x      = targets[i].x
-        p.target.y      = targets[i].y
+        p.startColor     = p.lerpColor()
+        p.targetColor    = targets[i].color
+        p.colorWeight    = 0
+        p.target.x       = targets[i].x
+        p.target.y       = targets[i].y
+        p.drawSize       = drawSize
       }
       for (let i = targets.length; i < particles.length; i++) particles[i].kill(w, h)
     }
@@ -230,6 +234,7 @@ export default function LoadingScreen({ onComplete }: { onComplete: () => void }
               p.target.y    = phase2[idx].y
               p.maxSpeed    = Math.random() * 3 + 3
               p.maxForce    = p.maxSpeed * 0.07
+              p.drawSize    = drawSizeRef.current
             } else if (idx < particles.length) {
               particles[idx].kill(w, h)
             }
@@ -275,13 +280,16 @@ export default function LoadingScreen({ onComplete }: { onComplete: () => void }
     // ── Build target sets for a given viewport ─────────────────────────────────
     // IMPORTANT: called AFTER fonts are ready so measurements are accurate.
     const buildTargetSets = (w: number, h: number) => {
+      // Adaptive sampling: smaller step on mobile → denser particles on small fonts
+      const step = w < 600 ? 2 : 3
+
       // Fit fonts to the current viewport
       const wFont = fitFont(ctx, LINES[1], w * 0.84, Math.min(w * 0.088, 104))
       const gFont = fitFont(ctx, 'GAM.',   w * 0.65, Math.min(w * 0.155, 180))
 
       // Phase 1 — welcome text (all white)
       const welcomeData = rasterise(w, h, wFont, LINES)
-      p1Ref.current = buildTargets(w, h, welcomeData, 3, () => ({ r: 255, g: 255, b: 255 }))
+      p1Ref.current = buildTargets(w, h, welcomeData, step, () => ({ r: 255, g: 255, b: 255 }))
 
       // Phase 2 — GAM. with red dot detected via PIXEL DIFF.
       // Centering shifts the whole string: 'GAM' centered ≠ 'GAM.' centered in position.
@@ -304,7 +312,7 @@ export default function LoadingScreen({ onComplete }: { onComplete: () => void }
       octxGAM.fillText('GAM', gamdStartX, h / 2)   // same start-x as centered 'GAM.'
       const gamData = octxGAM.getImageData(0, 0, w, h).data
 
-      p2Ref.current = buildTargets(w, h, gamdData, 3, (_x, _y, i) => {
+      p2Ref.current = buildTargets(w, h, gamdData, step, (_x, _y, i) => {
         const isDot = gamData[i + 3] <= 64   // pixel in GAM. but not in aligned GAM → dot
         return isDot ? { r: 224, g: 32, b: 32 } : { r: 255, g: 255, b: 255 }
       })
@@ -325,6 +333,7 @@ export default function LoadingScreen({ onComplete }: { onComplete: () => void }
         if (cancelled || doneRef.current) return
         canvas.width  = window.innerWidth
         canvas.height = window.innerHeight
+        drawSizeRef.current = canvas.width < 600 ? 2.2 : 1.5
         buildTargetSets(canvas.width, canvas.height)
         if (phaseRef.current >= 2) {
           applyTargets(p2Ref.current, 4, 8)
@@ -340,6 +349,8 @@ export default function LoadingScreen({ onComplete }: { onComplete: () => void }
 
       canvas.width  = window.innerWidth
       canvas.height = window.innerHeight
+      // Larger particles on mobile so text is visible at small font sizes
+      drawSizeRef.current = canvas.width < 600 ? 2.2 : 1.5
 
       buildTargetSets(canvas.width, canvas.height)
 
