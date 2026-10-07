@@ -1,20 +1,29 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { Fragment, useEffect, useLayoutEffect, useRef } from 'react'
 import gsap from 'gsap'
 import { getLenis } from '@/lib/lenis-ref'
 import { Mark, Wordmark } from '@/components/system/Logo'
 import Button from '@/components/system/Button'
 
 /*
- * Intro cinematográfica da home (~6s).
+ * Intro cinematográfica da home (~6.7s).
  *
- *  0.2s  partículas entram em espiral pelas bordas e formam
- *        "SEJA BEM-VINDO / À SUA NOVA REALIDADE" (letras em ordem aleatória)
- *  2.9s  o texto se contrai, explode e se reagrupa no logo "GAM." (ponto vermelho)
- *  4.0s  o logo nítido (DOM) assume o lugar das partículas; o ponto pulsa
- *  4.6s  um disco vermelho cresce a partir do ponto até cobrir a tela
- *  5.3s  um furo circular abre do centro e revela o site (onReveal → onComplete)
+ *  0.1s  as partículas chegam letra a letra, em ordem de leitura, e cada letra
+ *        "solidifica" em texto real (DOM): "Seja bem-vindo / à sua nova realidade."
+ *  1.7s  a frase inteira está nítida e parada: janela de leitura (~1.5s)
+ *  3.2s  o texto é re-medido no DOM e vira partículas no mesmo lugar (crossfade)
+ *  3.5s  as partículas se contraem, explodem e se reagrupam no logo "GAM."
+ *        (o ponto vermelho da frase vira o ponto vermelho do logo)
+ *  4.4s  o logo nítido (DOM) assume o lugar das partículas; o ponto pulsa
+ *  5.0s  um disco vermelho cresce a partir do ponto até cobrir a tela
+ *  5.8s  um furo circular abre do centro e revela o site (onReveal → onComplete ≈ 6.7s)
+ *
+ * Pular (botão, Esc/Enter/Espaço, toque curto) funciona em qualquer fase e
+ * termina em ≲1s — inclusive acelerando a saída natural já em curso.
+ *
+ * As partículas só existem em movimento (chegada e saída). Durante a leitura a
+ * frase é tipografia de verdade e o canvas não desenha nada.
  *
  * Desempenho: um único canvas, partículas em typed arrays (zero alocação por
  * frame), loop no ticker do GSAP (pausa com a aba oculta), nenhum re-render do
@@ -23,18 +32,20 @@ import Button from '@/components/system/Button'
 
 type Props = { onReveal: () => void; onComplete: () => void }
 
-/** Glifo desenhado no canvas fora da tela para ser amostrado. */
+/** Glifo medido no DOM e desenhado no canvas fora da tela para ser amostrado. */
 type Glyph = { ch: string; x: number; base: number; fs: number; red: boolean }
 
-/** Pontos-alvo de uma formação de partículas. */
+/** Pontos-alvo de uma formação de partículas (contíguos por glifo, em ordem de leitura). */
 type Formation = {
   n: number
   x: Float32Array
   y: Float32Array
   s: Float32Array // tamanho da partícula (px CSS)
-  g: Uint16Array // índice do glifo (stagger por letra)
+  g: Uint16Array // índice do glifo
   red: Uint8Array // 1 = partícula vermelha
   glyphs: number
+  gs: Uint32Array // primeira partícula de cada glifo (glyphs + 1 entradas)
+  fs: number // corpo da fonte (px)
 }
 
 /** Centro e diâmetro (px) — ponto vermelho do logo ou origem do disco. */
@@ -43,13 +54,31 @@ type Dot = { x: number; y: number; d: number }
 const RED = '#e02020'
 
 // Linha do tempo principal (segundos)
-const T_SWIRL = 0.2 // partículas começam a entrar
-const T_CHARGE = 2.62 // antecipação: o texto se contrai levemente
-const T_BURST = 2.9 // explode e se reagrupa em "GAM."
-const T_MARK = 4.0 // logo nítido assume o lugar das partículas
-const T_PULSE = 4.18 // ponto vermelho pulsa
-const T_STOP = 4.5 // loop do canvas encerrado
-const T_EXIT = 4.6 // disco vermelho → revelação
+const T_ARRIVE = 0.1 // partículas da 1ª letra partem
+const SWEEP = 0.8 // atraso entre a 1ª e a última letra (ordem de leitura)
+const FLY = 0.6 // voo de cada partícula na chegada (+ até 0.16s)
+const SOLID_AT = 0.5 // após a partida da letra: o glifo nítido (DOM) começa a surgir
+const SOLID_DUR = 0.24
+const FADE_AT = 0.58 // após a partida da letra: as partículas dela somem
+const FADE_DUR = 0.2
+const T_GLOW = 2.15 // leitura: o ponto vermelho da frase brilha uma vez
+const T_DISSOLVE = 3.2 // texto nítido → partículas (posições re-medidas no DOM)
+const T_CHARGE = 3.28 // antecipação: o texto se contrai levemente
+const T_BURST = 3.48 // explode e se reagrupa em "GAM."
+const T_MARK = 4.4 // logo nítido assume o lugar das partículas
+const T_PULSE = 4.58 // ponto vermelho pulsa
+const T_STOP = 4.9 // loop do canvas encerrado
+const T_EXIT = 5.0 // disco vermelho → revelação
+
+/** Partida das partículas da letra g (de G): uma após a outra, em ordem de leitura. */
+const glyphAt = (g: number, G: number) => T_ARRIVE + (G > 1 ? (g / (G - 1)) * SWEEP : 0)
+
+/** Frase de boas-vindas: linhas → grupos inquebráveis (em telas estreitas cada grupo vira uma linha). */
+const SENTENCE = [
+  ['Seja', 'bem-vindo'],
+  ['à sua nova', 'realidade.'],
+]
+const SENTENCE_TEXT = 'Seja bem-vindo à sua nova realidade.'
 
 const SCROLL_KEYS = new Set(['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', 'Home', 'End'])
 const MASK = 'radial-gradient(circle at 50% 50%, transparent var(--r), #000 calc(var(--r) + 1px))'
@@ -61,6 +90,8 @@ let playedThisDocument = false
  * CSS local. `data-lock` esconde a barra de rolagem desde o primeiro paint (sem
  * salto de layout na hidratação nem no fim); `data-failsafe` libera o site se o
  * JS nunca rodar. O JS remove os dois atributos.
+ * A frase tem 4 linhas em telas estreitas e 2 a partir de 640px; o corpo escala
+ * por min(vw, vh) para caber sempre entre as barras do HUD.
  */
 const CSS = [
   '@keyframes gam-intro-failsafe{to{opacity:0;visibility:hidden}}',
@@ -71,6 +102,9 @@ const CSS = [
   'html:has(.gam-intro[data-lock][data-failsafe]){animation:gam-intro-unlock 1ms 10.5s forwards}',
   '.gam-intro-in{animation:gam-intro-in .9s cubic-bezier(.16,1,.3,1) both}',
   '@media (prefers-reduced-motion:reduce){.gam-intro-in{animation:none}}',
+  '.gam-intro-text{font-size:min(18vw,13vh)}',
+  '@media (min-width:640px){.gam-intro-text{font-size:min(8.2vw,24vh,10rem)}}',
+  '.gam-intro-text [data-c]{opacity:0}',
 ].join('')
 const NOSCRIPT_CSS = '.gam-intro{display:none!important}html:has(.gam-intro){overflow-y:auto!important}'
 
@@ -85,6 +119,16 @@ const EMPTY: Formation = {
   g: new Uint16Array(0),
   red: new Uint8Array(0),
   glyphs: 0,
+  gs: new Uint32Array(1),
+  fs: 0,
+}
+
+/** Desloca uma formação ainda não usada (resize pequeno: barra de endereço no mobile). */
+function shiftFormation(F: Formation, dx: number, dy: number) {
+  for (let i = 0; i < F.n; i++) {
+    F.x[i] += dx
+    F.y[i] += dy
+  }
 }
 
 /* ───────────────────────── Amostragem de texto ───────────────────────── */
@@ -96,56 +140,17 @@ function baselineOf(r: DOMRect, m: TextMetrics) {
   return r.top + r.height * (asc > 0 && desc >= 0 ? asc / (asc + desc) : 0.774)
 }
 
-/** Layout do texto de boas-vindas: 2 linhas no desktop, 4 em telas estreitas. */
-function textGlyphs(ctx: CanvasRenderingContext2D, w: number, h: number, fam: string): Glyph[] {
-  const narrow = w < 720 || w < h * 0.95
-  const big = narrow ? ['SEJA', 'BEM-VINDO'] : ['SEJA BEM-VINDO']
-  const small = narrow ? ['À SUA NOVA', 'REALIDADE'] : ['À SUA NOVA REALIDADE']
-  const ratio = narrow ? 0.58 : 0.45
-  const maxW = Math.min(w * (narrow ? 0.86 : 0.72), 1100)
-
-  ctx.font = `800 100px ${fam}`
-  const widest = (rows: string[]) => rows.reduce((m, t) => Math.max(m, ctx.measureText(t).width), 0)
-  const cap = ctx.measureText('H').actualBoundingBoxAscent / 100 || 0.7
-  const fs = Math.min((maxW / Math.max(widest(big), widest(small) * ratio)) * 100, h * (narrow ? 0.12 : 0.19))
-  const fsS = fs * ratio
-
-  const rows = [
-    ...big.map((t) => ({ t, fs, gap: fs * 0.24 })),
-    ...small.map((t) => ({ t, fs: fsS, gap: fsS * 0.4 })),
-  ]
-  const groupGap = fs * 0.32 + fsS * 0.22 // espaço extra para o acento do "À"
-  const gapAfter = (i: number) => (i === big.length - 1 ? groupGap : rows[i].gap)
-
-  let total = 0
-  rows.forEach((r, i) => {
-    total += r.fs * cap + (i < rows.length - 1 ? gapAfter(i) : 0)
-  })
-
-  const out: Glyph[] = []
-  let y = (h - total) / 2 - h * 0.01 // leve ajuste para o centro óptico
-  rows.forEach((r, i) => {
-    y += r.fs * cap
-    ctx.font = `800 ${r.fs}px ${fam}`
-    const x0 = (w - ctx.measureText(r.t).width) / 2
-    for (let k = 0; k < r.t.length; k++) {
-      const ch = r.t[k]
-      if (ch === ' ') continue
-      out.push({ ch, x: x0 + ctx.measureText(r.t.slice(0, k)).width, base: y, fs: r.fs, red: false })
-    }
-    if (i < rows.length - 1) y += gapAfter(i)
-  })
-  return out
-}
-
-/** Glifos do <Mark> medidos no DOM — as partículas caem exatamente sobre o logo real. */
-function markGlyphs(markEl: HTMLElement, ctx: CanvasRenderingContext2D, fam: string): Glyph[] {
-  const fs = parseFloat(getComputedStyle(markEl).fontSize)
+/**
+ * Glifos de um elemento medidos no DOM (um Range por caractere, em ordem de
+ * leitura) — as partículas caem exatamente sobre as letras reais.
+ */
+function domGlyphs(el: HTMLElement, ctx: CanvasRenderingContext2D, fam: string): Glyph[] {
+  const fs = parseFloat(getComputedStyle(el).fontSize)
   ctx.font = `800 ${fs}px ${fam}`
   const m = ctx.measureText('G')
   const out: Glyph[] = []
   const range = document.createRange()
-  const walker = document.createTreeWalker(markEl, NodeFilter.SHOW_TEXT)
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
     const text = node.textContent ?? ''
     for (let i = 0; i < text.length; i++) {
@@ -161,21 +166,21 @@ function markGlyphs(markEl: HTMLElement, ctx: CanvasRenderingContext2D, fam: str
 }
 
 /**
- * Desenha os glifos num canvas fora da tela e amostra a tinta numa grade com
- * jitter. O passo cresce com a raiz do corpo da fonte: letras grandes recebem
- * mais partículas, letras pequenas ficam mais densas (continuam legíveis) e o
- * total fica perto do orçamento.
+ * Desenha cada glifo sozinho num canvas fora da tela e amostra a tinta numa
+ * grade com jitter. Passo uniforme, o menor que o orçamento permite: partículas
+ * pequenas e próximas desenham a letra inteira, não um pontilhado ralo.
  */
 function sampleGlyphs(
   ctx: CanvasRenderingContext2D,
   glyphs: Glyph[],
   fam: string,
-  budget: number,
-  redChance: number,
+  cap: number,
+  minStep: number,
 ): Formation {
   const W = ctx.canvas.width
   const H = ctx.canvas.height
-  if (!glyphs.length || !W || !H) return EMPTY
+  const G = glyphs.length
+  if (!G || !W || !H) return EMPTY
 
   ctx.setTransform(1, 0, 0, 1, 0, 0)
   ctx.clearRect(0, 0, W, H)
@@ -183,19 +188,18 @@ function sampleGlyphs(
   ctx.textAlign = 'left'
   ctx.textBaseline = 'alphabetic'
 
-  const box = new Int32Array(glyphs.length * 4)
-  let ux0 = W
-  let uy0 = H
-  let ux1 = 0
-  let uy1 = 0
+  // 1) tinta de cada glifo isolado (uma partícula nunca cai na letra vizinha)
+  const box = new Int32Array(G * 4)
+  const inks: Array<Uint8ClampedArray | null> = []
+  let ink = 0
   let font = ''
-  glyphs.forEach((gl, gi) => {
+  for (let gi = 0; gi < G; gi++) {
+    const gl = glyphs[gi]
     const f = `800 ${gl.fs}px ${fam}`
     if (f !== font) {
       ctx.font = f
       font = f
     }
-    ctx.fillText(gl.ch, gl.x, gl.base)
     const m = ctx.measureText(gl.ch)
     const x0 = clampInt(Math.floor(gl.x - m.actualBoundingBoxLeft) - 1, 0, W)
     const x1 = clampInt(Math.ceil(gl.x + m.actualBoundingBoxRight) + 1, 0, W)
@@ -205,58 +209,54 @@ function sampleGlyphs(
     box[gi * 4 + 1] = y0
     box[gi * 4 + 2] = x1
     box[gi * 4 + 3] = y1
-    ux0 = Math.min(ux0, x0)
-    uy0 = Math.min(uy0, y0)
-    ux1 = Math.max(ux1, x1)
-    uy1 = Math.max(uy1, y1)
-  })
-  if (ux1 <= ux0 || uy1 <= uy0) return EMPTY
-
-  const bw = ux1 - ux0
-  const data = ctx.getImageData(ux0, uy0, bw, uy1 - uy0).data
-  const ink = (x: number, y: number) => data[((y - uy0) * bw + (x - ux0)) * 4 + 3] > 128
-
-  // 1) tinta por glifo → passo adaptativo
-  let acc = 0
-  for (let gi = 0; gi < glyphs.length; gi++) {
-    let c = 0
-    for (let y = box[gi * 4 + 1]; y < box[gi * 4 + 3]; y++) {
-      for (let x = box[gi * 4]; x < box[gi * 4 + 2]; x++) if (ink(x, y)) c++
+    if (x1 <= x0 || y1 <= y0) {
+      inks.push(null)
+      continue
     }
-    acc += c / glyphs[gi].fs
+    ctx.fillText(gl.ch, gl.x, gl.base)
+    const data = ctx.getImageData(x0, y0, x1 - x0, y1 - y0).data
+    ctx.clearRect(x0, y0, x1 - x0, y1 - y0)
+    for (let p = 3; p < data.length; p += 4) if (data[p] > 128) ink++
+    inks.push(data)
   }
-  const k = Math.sqrt(acc / Math.max(1, budget))
+  if (!ink) return EMPTY
+  const step = Math.max(minStep, Math.sqrt(ink / Math.max(1, cap)))
+  const size = Math.min(1.5, Math.max(0.8, step * 0.46))
 
-  // 2) grade com jitter
+  // 2) grade com jitter, glifo a glifo
   const xs: number[] = []
   const ys: number[] = []
   const ss: number[] = []
   const gs: number[] = []
   const rs: number[] = []
-  for (let gi = 0; gi < glyphs.length; gi++) {
-    const gl = glyphs[gi]
-    const step = Math.max(1.4, k * Math.sqrt(gl.fs))
-    const size = Math.min(2.6, Math.max(1.1, step * 0.5))
+  const starts = new Uint32Array(G + 1)
+  for (let gi = 0; gi < G; gi++) {
+    starts[gi] = xs.length
+    const data = inks[gi]
+    if (!data) continue
     const x0 = box[gi * 4]
     const y0 = box[gi * 4 + 1]
     const x1 = box[gi * 4 + 2]
     const y1 = box[gi * 4 + 3]
+    const bw = x1 - x0
+    const red = glyphs[gi].red ? 1 : 0
     for (let gy = y0; gy < y1; gy += step) {
       for (let gx = x0; gx < x1; gx += step) {
         // jitter contido: pontilhado orgânico, mas limpo
-        const px = gx + (0.22 + Math.random() * 0.56) * step
-        const py = gy + (0.22 + Math.random() * 0.56) * step
+        const px = gx + (0.2 + Math.random() * 0.6) * step
+        const py = gy + (0.2 + Math.random() * 0.6) * step
         const ix = px | 0
         const iy = py | 0
-        if (ix >= x1 || iy >= y1 || !ink(ix, iy)) continue
+        if (ix >= x1 || iy >= y1 || data[((iy - y0) * bw + (ix - x0)) * 4 + 3] <= 128) continue
         xs.push(px)
         ys.push(py)
         ss.push(size * (0.85 + Math.random() * 0.3))
         gs.push(gi)
-        rs.push(gl.red || Math.random() < redChance ? 1 : 0)
+        rs.push(red)
       }
     }
   }
+  starts[G] = xs.length
   return {
     n: xs.length,
     x: Float32Array.from(xs),
@@ -264,7 +264,9 @@ function sampleGlyphs(
     s: Float32Array.from(ss),
     g: Uint16Array.from(gs),
     red: Uint8Array.from(rs),
-    glyphs: glyphs.length,
+    glyphs: G,
+    gs: starts,
+    fs: glyphs[0].fs,
   }
 }
 
@@ -276,17 +278,24 @@ class ParticleField {
   w = 0
   h = 0
   n = 0
-  /** 1 = espiral até o texto · 2 = burst até o logo */
+  /** 1 = chegada letra a letra · 2 = parado sobre o texto (saída) · 3 = burst até o logo */
   mode = 0
   /** antecipação antes do burst (0→1, tween do GSAP) */
   charge = 0
-  /** opacidade global (fade-out ao entregar para o logo DOM) */
+  /** opacidade global (crossfade com o texto na saída e com o logo DOM no fim) */
   alpha = 1
   px = -1e4
   py = -1e4
   pointer = false
-  private sy = 1
-  private streak = 1.6
+  /** nada a desenhar (a frase está nítida no DOM): o loop só confere o tempo */
+  private idle = false
+  private idleAt = 1e9
+  private streak = 1.2
+  // grupos por glifo (partículas contíguas): alpha atual e início do fade-out de cada letra
+  private G = 0
+  private GS: Uint32Array = new Uint32Array(1)
+  private GA = f32(0)
+  private GF = f32(0)
   // posição atual / anterior (rastro de movimento)
   private X = f32(0)
   private Y = f32(0)
@@ -301,8 +310,6 @@ class ParticleField {
   private SZ = f32(0)
   private SA = f32(0)
   private SB = f32(0)
-  private JP = f32(0)
-  private JW = f32(0)
   private LUM = new Uint8Array(0)
   private CA = new Uint8Array(0)
   private CB = new Uint8Array(0)
@@ -318,7 +325,6 @@ class ParticleField {
   private R0 = f32(0)
   private A0 = f32(0)
   private DA = f32(0)
-  private R1 = f32(0)
   private B0X = f32(0)
   private B0Y = f32(0)
   private B1X = f32(0)
@@ -358,8 +364,8 @@ class ParticleField {
     this.ctx?.clearRect(0, 0, this.w, this.h)
   }
 
-  /** Fase 1: cada partícula entra de fora da tela numa espiral até seu ponto no texto. */
-  initText(A: Formation, t0: number) {
+  /** (Re)cria os arrays para uma formação — só na troca de fase, nunca por frame. */
+  private alloc(A: Formation) {
     const n = A.n
     this.n = n
     this.X = f32(n)
@@ -373,8 +379,6 @@ class ParticleField {
     this.SZ = f32(n)
     this.SA = f32(n)
     this.SB = f32(n)
-    this.JP = f32(n)
-    this.JW = f32(n)
     this.LUM = new Uint8Array(n)
     this.CA = new Uint8Array(n)
     this.CB = new Uint8Array(n)
@@ -389,47 +393,43 @@ class ParticleField {
     this.R0 = f32(n)
     this.A0 = f32(n)
     this.DA = f32(n)
-    this.R1 = f32(n)
     this.B0X = f32(n)
     this.B0Y = f32(n)
     this.B1X = f32(n)
     this.B1Y = f32(n)
     this.B2X = f32(n)
     this.B2Y = f32(n)
+    this.G = A.glyphs
+    this.GS = A.gs
+    this.GA = f32(A.glyphs).fill(1)
+    this.GF = f32(A.glyphs).fill(1e9)
+    this.idle = false
+    this.idleAt = 1e9
+  }
 
-    const cx = this.w / 2
-    const cy = this.h / 2
-    // espaço "normalizado": a tela vira um quadrado, então o vórtice acompanha a proporção
-    const sy = (this.sy = this.h / this.w)
-    const outside = (this.w / 2) * Math.SQRT2
-
-    // letras surgem em ordem aleatória
-    const G = Math.max(1, A.glyphs)
-    const order = Array.from({ length: G }, (_, i) => i)
-    for (let i = G - 1; i > 0; i--) {
-      const j = (Math.random() * (i + 1)) | 0
-      const tmp = order[i]
-      order[i] = order[j]
-      order[j] = tmp
-    }
-    const delay = f32(G)
-    for (let r = 0; r < G; r++) delay[order[r]] = G > 1 ? (r / (G - 1)) * 0.62 : 0
-
+  /**
+   * Chegada: as partículas de cada letra partem do repouso num leque à direita
+   * dela (onde o texto ainda vai se formar) e entram numa espiral curta, letra
+   * após letra. Ao pousar, a letra nítida assume e as partículas dela somem.
+   */
+  initText(A: Formation) {
+    this.alloc(A)
+    const n = A.n
+    const G = A.glyphs
+    for (let g = 0; g < G; g++) this.GF[g] = glyphAt(g, G) + FADE_AT
+    this.idleAt = glyphAt(G - 1, G) + FADE_AT + FADE_DUR
+    const fs = A.fs
     let sum = 0
     for (let i = 0; i < n; i++) {
       const tx = A.x[i]
       const ty = A.y[i]
-      const nx = tx - cx
-      const ny = (ty - cy) / sy
-      const spin = (0.45 + Math.random() * 0.6) * Math.PI
-      const a0 = Math.atan2(ny, nx) - spin
-      const r0 = outside * (1.05 + Math.random() * 0.4)
+      const a0 = (Math.random() + Math.random() - 1) * 1.0
+      const r0 = fs * (0.45 + Math.random() * 1.6)
+      const fx = tx + Math.cos(a0) * r0
+      const fy = ty + Math.sin(a0) * r0
       this.R0[i] = r0
       this.A0[i] = a0
-      this.DA[i] = spin
-      this.R1[i] = Math.sqrt(nx * nx + ny * ny)
-      const fx = cx + Math.cos(a0) * r0
-      const fy = cy + Math.sin(a0) * r0 * sy
+      this.DA[i] = 0.45 + Math.random() * 0.6
       this.FX[i] = fx
       this.FY[i] = fy
       this.X[i] = fx
@@ -438,27 +438,56 @@ class ParticleField {
       this.PY[i] = fy
       this.TX[i] = tx
       this.TY[i] = ty
-      this.T0[i] = t0 + delay[A.g[i]] + Math.random() * 0.22
-      this.DU[i] = 1 + Math.random() * 0.28
+      this.T0[i] = glyphAt(A.g[i], G) + Math.random() * 0.1
+      this.DU[i] = FLY + Math.random() * 0.16
+      const s = A.s[i]
+      this.SA[i] = s
+      this.SB[i] = s
+      sum += s
+      // o ponto final já nasce vermelho; algumas faíscas vermelhas "esfriam" para branco no voo
+      const red = A.red[i]
+      const spark = !red && Math.random() < 0.03 ? 1 : 0
+      this.CA[i] = red || spark
+      this.CB[i] = red
+      this.FLIP[i] = spark ? this.T0[i] + this.DU[i] * 0.6 : 1e9
+      this.LUM[i] = Math.random() < 0.25 ? 1 : 0
+    }
+    this.streak = n ? (sum / n) * 0.8 : 1.2
+    this.mode = 1
+  }
+
+  /** Saída: partículas exatamente sobre as letras nítidas (posições recém-medidas no DOM). */
+  initStatic(A: Formation) {
+    this.alloc(A)
+    const n = A.n
+    let sum = 0
+    for (let i = 0; i < n; i++) {
+      const x = A.x[i]
+      const y = A.y[i]
+      this.X[i] = x
+      this.Y[i] = y
+      this.PX[i] = x
+      this.PY[i] = y
+      this.TX[i] = x
+      this.TY[i] = y
       const s = A.s[i]
       this.SA[i] = s
       this.SB[i] = s
       this.SZ[i] = s
       sum += s
-      // faíscas vermelhas no vórtice "esfriam" para branco ao pousar: o texto fica limpo
-      const red = A.red[i]
-      this.CA[i] = red
-      this.CB[i] = 0
-      this.FLIP[i] = red ? this.T0[i] + this.DU[i] * 0.72 : 1e9
-      this.LUM[i] = Math.random() < 0.3 ? 1 : 0
-      this.JP[i] = Math.random() * Math.PI * 2
-      this.JW[i] = 1.1 + Math.random() * 1.6
+      this.CA[i] = A.red[i]
+      this.CB[i] = A.red[i]
+      this.FLIP[i] = 1e9
+      this.LUM[i] = Math.random() < 0.25 ? 1 : 0
     }
-    this.streak = n ? (sum / n) * 0.85 : 1.6
-    this.mode = 1
+    this.streak = n ? (sum / n) * 0.8 : 1.2
+    this.mode = 2
   }
 
-  /** Fase 2: explode para fora e se reagrupa no logo (pares ordenados por x, com ruído). */
+  /**
+   * Burst: explode para fora e se reagrupa no logo. O ponto vermelho da frase
+   * vai para o ponto vermelho do logo; o resto em pares ordenados por x (com ruído).
+   */
   toMark(B: Formation, t: number) {
     const n = this.n
     const m = B.n
@@ -468,23 +497,49 @@ class ParticleField {
     const vmin = Math.min(this.w, this.h)
     const noise = this.w * 0.1
     const k = 1 - this.charge * 0.035
+    const { TX, TY, CA, CB, FLIP } = this
+    const target = new Int32Array(n).fill(-1)
+    const used = new Uint8Array(m)
 
+    // 1) vermelho → vermelho
+    const rp: number[] = []
+    const rb: number[] = []
+    for (let i = 0; i < n; i++) if (CB[i]) rp.push(i)
+    for (let j = 0; j < m; j++) if (B.red[j]) rb.push(j)
+    if (rp.length && rb.length) {
+      rp.sort((a, b) => TX[a] - TX[b])
+      rb.sort((a, b) => B.x[a] - B.x[b])
+      for (let r = 0; r < rp.length; r++) {
+        const j = rb[Math.min(rb.length - 1, Math.floor((r * rb.length) / rp.length))]
+        target[rp[r]] = j
+        used[j] = 1
+      }
+    }
+
+    // 2) o resto (alvos vermelhos que sobraram recebem partículas que avermelham no voo)
+    const pi: number[] = []
+    const bi: number[] = []
+    for (let i = 0; i < n; i++) if (target[i] < 0) pi.push(i)
+    for (let j = 0; j < m; j++) if (!used[j]) bi.push(j)
+    if (!bi.length) for (let j = 0; j < m; j++) bi.push(j)
     const pk = f32(n)
-    for (let i = 0; i < n; i++) pk[i] = this.TX[i] + (Math.random() - 0.5) * noise
-    const pi = Array.from({ length: n }, (_, i) => i).sort((a, b) => pk[a] - pk[b])
+    for (let i = 0; i < n; i++) pk[i] = TX[i] + (Math.random() - 0.5) * noise
     const bk = f32(m)
     for (let j = 0; j < m; j++) bk[j] = B.x[j] + (Math.random() - 0.5) * noise
-    const bi = Array.from({ length: m }, (_, j) => j).sort((a, b) => bk[a] - bk[b])
+    pi.sort((a, b) => pk[a] - pk[b])
+    bi.sort((a, b) => bk[a] - bk[b])
+    for (let r = 0; r < pi.length; r++) {
+      target[pi[r]] = bi[Math.min(bi.length - 1, Math.floor((r * bi.length) / pi.length))]
+    }
     const dup = n > m ? 0.6 : 0
 
-    for (let r = 0; r < n; r++) {
-      const i = pi[r]
-      const j = bi[Math.min(m - 1, Math.floor((r * m) / n))]
+    for (let i = 0; i < n; i++) {
+      const j = target[i]
       const tx = B.x[j] + (Math.random() - 0.5) * dup
       const ty = B.y[j] + (Math.random() - 0.5) * dup
-      // ponto de partida = alvo do texto já contraído (todas as partículas pousaram)
-      const sx = cx + (this.TX[i] - cx) * k
-      const sy = cy + (this.TY[i] - cy) * k
+      // ponto de partida = letra já contraída
+      const sx = cx + (TX[i] - cx) * k
+      const sy = cy + (TY[i] - cy) * k
       let dx = sx - cx
       let dy = sy - cy
       let d = Math.sqrt(dx * dx + dy * dy)
@@ -511,27 +566,40 @@ class ParticleField {
       this.B1Y[i] = sy + uy * burst + ux * side
       this.B2X[i] = tx + ex * pull
       this.B2Y[i] = ty + ey * pull
-      this.TX[i] = tx
-      this.TY[i] = ty
-      this.CA[i] = t >= this.FLIP[i] ? this.CB[i] : this.CA[i] // cor atual vira a de partida
-      this.T0[i] = t + Math.random() * 0.14
-      this.DU[i] = 0.88 + Math.random() * 0.24
+      TX[i] = tx
+      TY[i] = ty
+      CA[i] = t >= FLIP[i] ? CB[i] : CA[i] // cor atual vira a de partida
+      this.T0[i] = t + Math.random() * 0.12
+      this.DU[i] = 0.8 + Math.random() * 0.2
       this.SB[i] = B.s[j]
-      this.CB[i] = B.red[j]
-      this.FLIP[i] = this.T0[i] + this.DU[i] * (0.18 + Math.random() * 0.3)
+      CB[i] = B.red[j]
+      FLIP[i] = CA[i] === CB[i] ? 1e9 : this.T0[i] + this.DU[i] * (0.18 + Math.random() * 0.3)
     }
-    this.mode = 2
+    this.mode = 3
   }
 
   frame(t: number, dt: number) {
     const n = this.n
-    if (!n || !this.ctx) return
-    const { X, Y, OX, OY, VX, VY, SZ, SA, SB, JP, JW, LUM, CA, CB, BK, FLIP, T0, DU, TX, TY } = this
-    const { FX, FY, R0, A0, DA, R1, B0X, B0Y, B1X, B1Y, B2X, B2Y } = this
+    const ctx = this.ctx
+    if (!n || !ctx || this.idle) return
     const mode = this.mode
+    if (mode === 1) {
+      if (t >= this.idleAt) {
+        // a frase inteira já está nítida no DOM: canvas limpo e loop ocioso até a saída
+        ctx.clearRect(0, 0, this.w, this.h)
+        this.idle = true
+        return
+      }
+      const { GA, GF } = this
+      for (let g = 0; g < this.G; g++) {
+        const q = (t - GF[g]) / FADE_DUR
+        GA[g] = q <= 0 ? 1 : q >= 1 ? 0 : 1 - q * q * (3 - 2 * q)
+      }
+    }
+    const { X, Y, OX, OY, VX, VY, SZ, SA, SB, LUM, CA, CB, BK, FLIP, T0, DU, TX, TY } = this
+    const { FX, FY, R0, A0, DA, B0X, B0Y, B1X, B1Y, B2X, B2Y } = this
     const cx = this.w * 0.5
     const cy = this.h * 0.5
-    const sy = this.sy
     const k60 = Math.min(3, Math.max(0.25, dt * 60))
     const damp = Math.pow(0.85, k60)
     const spring = 0.05 * k60
@@ -541,62 +609,61 @@ class ParticleField {
     const R = Math.max(70, Math.min(this.w, this.h) * 0.13)
     const R2 = R * R
     const push = 2.4 * k60
-    const ck = mode === 1 ? 1 - this.charge * 0.035 : 1
+    const ck = mode === 2 ? 1 - this.charge * 0.035 : 1
 
     for (let i = 0; i < n; i++) {
-      const u = (t - T0[i]) / DU[i]
       let bx: number
       let by: number
       let s: number
       if (mode === 1) {
+        const u = (t - T0[i]) / DU[i]
         if (u <= 0) {
           bx = FX[i]
           by = FY[i]
+          s = 0
         } else if (u >= 1) {
           bx = TX[i]
           by = TY[i]
+          s = SA[i]
         } else {
-          // espiral: raio (quart.out) converge um pouco antes do ângulo (cubic.out)
+          // espiral curta: sai do repouso (sem estalo) e assenta devagar no alvo
           const v = 1 - u
-          const v3 = v * v * v
-          const r = R0[i] + (R1[i] - R0[i]) * (1 - v3 * v)
-          const a = A0[i] + DA[i] * (1 - v3)
-          bx = cx + Math.cos(a) * r
-          by = cy + Math.sin(a) * r * sy
+          const v2 = v * v
+          const e = 1 - v2 * v2 * (1 + 4 * u)
+          const r = R0[i] * (1 - e)
+          const a = A0[i] + DA[i] * e
+          bx = TX[i] + Math.cos(a) * r
+          by = TY[i] + Math.sin(a) * r
+          s = u < 0.25 ? SA[i] * u * 4 : SA[i]
         }
-        if (ck !== 1) {
-          bx = cx + (bx - cx) * ck
-          by = cy + (by - cy) * ck
-        }
+      } else if (mode === 2) {
+        bx = cx + (TX[i] - cx) * ck
+        by = cy + (TY[i] - cy) * ck
         s = SA[i]
-      } else if (u <= 0) {
-        bx = B0X[i]
-        by = B0Y[i]
-        s = SA[i]
-      } else if (u >= 1) {
-        bx = TX[i]
-        by = TY[i]
-        s = SB[i]
       } else {
-        // bézier cúbica: sai para fora (burst) e entra no logo vindo de fora
-        const v = 1 - u
-        const e = 1 - v * v * v
-        const ie = 1 - e
-        const c0 = ie * ie * ie
-        const c1 = 3 * ie * ie * e
-        const c2 = 3 * ie * e * e
-        const c3 = e * e * e
-        bx = c0 * B0X[i] + c1 * B1X[i] + c2 * B2X[i] + c3 * TX[i]
-        by = c0 * B0Y[i] + c1 * B1Y[i] + c2 * B2Y[i] + c3 * TY[i]
-        s = SA[i] + (SB[i] - SA[i]) * e
+        const u = (t - T0[i]) / DU[i]
+        if (u <= 0) {
+          bx = B0X[i]
+          by = B0Y[i]
+          s = SA[i]
+        } else if (u >= 1) {
+          bx = TX[i]
+          by = TY[i]
+          s = SB[i]
+        } else {
+          // bézier cúbica: sai para fora (burst) e entra no logo vindo de fora
+          const v = 1 - u
+          const e = 1 - v * v * v
+          const ie = 1 - e
+          const c0 = ie * ie * ie
+          const c1 = 3 * ie * ie * e
+          const c2 = 3 * ie * e * e
+          const c3 = e * e * e
+          bx = c0 * B0X[i] + c1 * B1X[i] + c2 * B2X[i] + c3 * TX[i]
+          by = c0 * B0Y[i] + c1 * B1Y[i] + c2 * B2Y[i] + c3 * TY[i]
+          s = SA[i] + (SB[i] - SA[i]) * e
+        }
       }
-
-      // micro-oscilação (texto "vivo" enquanto segura)
-      const amp = s * 0.3
-      const ph = JP[i]
-      const w = JW[i]
-      bx += Math.sin(t * w + ph) * amp
-      by += Math.cos(t * w * 0.8 + ph * 1.7) * amp
 
       // ponteiro empurra; mola traz de volta
       let ox = OX[i]
@@ -640,42 +707,48 @@ class ParticleField {
     this.draw()
   }
 
-  /** Três passes em lote (branco forte, branco suave, vermelho), cada um com seu rastro. */
+  /** Letra a letra (cada uma com seu alpha): três passes em lote (branco forte, branco suave, vermelho), cada um com seu rastro. */
   private draw() {
     const ctx = this.ctx
     if (!ctx) return
-    const { n, X, Y, PX, PY, SZ, BK } = this
+    const { X, Y, PX, PY, SZ, BK, GS, GA } = this
     ctx.clearRect(0, 0, this.w, this.h)
     if (this.alpha > 0.003) {
-      for (let b = 0; b < 3; b++) {
-        const a = (b === 0 ? 0.95 : b === 1 ? 0.5 : 1) * this.alpha
-        const color = b === 2 ? RED : '#ffffff'
-        ctx.globalAlpha = a
-        ctx.fillStyle = color
-        for (let i = 0; i < n; i++) {
-          if (BK[i] !== b) continue
-          const s = SZ[i]
-          ctx.fillRect(X[i] - s * 0.5, Y[i] - s * 0.5, s, s)
-        }
-        // rastro = deslocamento deste frame (motion blur sem acumular fantasmas)
-        ctx.beginPath()
-        let any = false
-        for (let i = 0; i < n; i++) {
-          if (BK[i] !== b) continue
-          const dx = X[i] - PX[i]
-          const dy = Y[i] - PY[i]
-          const d2 = dx * dx + dy * dy
-          if (d2 > 4 && d2 < 40000) {
-            ctx.moveTo(PX[i], PY[i])
-            ctx.lineTo(X[i], Y[i])
-            any = true
+      ctx.lineWidth = this.streak
+      for (let g = 0; g < this.G; g++) {
+        const ga = GA[g] * this.alpha
+        if (ga < 0.003) continue
+        const i0 = GS[g]
+        const i1 = GS[g + 1]
+        for (let b = 0; b < 3; b++) {
+          const a = (b === 0 ? 0.95 : b === 1 ? 0.5 : 1) * ga
+          const color = b === 2 ? RED : '#ffffff'
+          ctx.globalAlpha = a
+          ctx.fillStyle = color
+          for (let i = i0; i < i1; i++) {
+            const s = SZ[i]
+            if (BK[i] !== b || s < 0.05) continue
+            ctx.fillRect(X[i] - s * 0.5, Y[i] - s * 0.5, s, s)
           }
-        }
-        if (any) {
-          ctx.globalAlpha = a * 0.42
-          ctx.strokeStyle = color
-          ctx.lineWidth = this.streak
-          ctx.stroke()
+          // rastro = deslocamento deste frame (motion blur sem acumular fantasmas)
+          ctx.beginPath()
+          let any = false
+          for (let i = i0; i < i1; i++) {
+            if (BK[i] !== b || SZ[i] < 0.05) continue
+            const dx = X[i] - PX[i]
+            const dy = Y[i] - PY[i]
+            const d2 = dx * dx + dy * dy
+            if (d2 > 4 && d2 < 40000) {
+              ctx.moveTo(PX[i], PY[i])
+              ctx.lineTo(X[i], Y[i])
+              any = true
+            }
+          }
+          if (any) {
+            ctx.globalAlpha = a * (this.mode === 1 ? 0.2 : 0.42)
+            ctx.strokeStyle = color
+            ctx.stroke()
+          }
         }
       }
       ctx.globalAlpha = 1
@@ -691,6 +764,7 @@ export default function Intro({ onReveal, onComplete }: Props) {
   const rootRef = useRef<HTMLElement>(null)
   const innerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const textRef = useRef<HTMLParagraphElement>(null)
   const markRef = useRef<HTMLDivElement>(null)
   const glowRef = useRef<HTMLDivElement>(null)
   const discRef = useRef<HTMLDivElement>(null)
@@ -711,6 +785,7 @@ export default function Intro({ onReveal, onComplete }: Props) {
     const root = rootRef.current
     const inner = innerRef.current
     const canvas = canvasRef.current
+    const textEl = textRef.current
     const markWrap = markRef.current
     const glow = glowRef.current
     const disc = discRef.current
@@ -718,12 +793,17 @@ export default function Intro({ onReveal, onComplete }: Props) {
     const count = countRef.current
     const bar = barRef.current
     const skipWrap = skipWrapRef.current
-    if (!root || !inner || !canvas || !markWrap || !glow || !disc || !hud || !count || !bar || !skipWrap) return
+    if (!root || !inner || !canvas || !textEl || !markWrap || !glow || !disc || !hud || !count || !bar || !skipWrap) {
+      return
+    }
 
     const html = document.documentElement
     const fired = firedRef.current
     const markEl = markWrap.firstElementChild instanceof HTMLElement ? markWrap.firstElementChild : null
     const dotEl = markEl?.lastElementChild instanceof HTMLElement ? markEl.lastElementChild : null
+    // letras da frase em ordem de leitura (mesma ordem dos glifos medidos)
+    const chars = Array.from(textEl.querySelectorAll<HTMLElement>('[data-c]'))
+    const periodEl = chars.find((c) => c.textContent === '.') ?? null
 
     const fireReveal = () => {
       if (fired.reveal) return
@@ -839,33 +919,65 @@ export default function Intro({ onReveal, onComplete }: Props) {
       document.removeEventListener('visibilitychange', onVisibility)
     })
 
+    /* ── aguarda a Bricolage (máx. 1.2s) antes de mostrar/medir a frase ── */
+    const fam =
+      getComputedStyle(html).getPropertyValue('--font-bricolage').trim() || '"Bricolage Grotesque", sans-serif'
+    const fontSpec = `800 120px ${fam}`
+    let fontTimer = 0
+    const fontsReady: Promise<void> = document.fonts
+      ? Promise.race([
+          document.fonts.load(fontSpec).then(
+            () => undefined,
+            () => undefined,
+          ),
+          new Promise<void>((resolve) => {
+            fontTimer = window.setTimeout(resolve, 1200)
+          }),
+        ])
+      : Promise.resolve()
+    cleanups.push(() => window.clearTimeout(fontTimer))
+
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      /* ── movimento reduzido: "GAM." estático e fade ── */
-      markWrap.style.opacity = '1'
+      /* ── movimento reduzido: sem partículas — a frase nítida aparece, fica para leitura e some ── */
       count.textContent = '100'
       bar.style.transform = 'none'
-      const tl = gsap.timeline({ paused: document.hidden })
-      tl.call(() => {
-        exiting = true
-        unlock()
-        fireReveal()
-      }, [], 0.7)
-      tl.to(root, { opacity: 0, duration: 0.4, ease: 'power1.out' }, 0.7)
-      tl.call(finish)
-      active = tl
+      gsap.set(chars, { opacity: 1 })
+      gsap.set(textEl, { opacity: 0 })
+      const run = () => {
+        if (disposed || exiting) return
+        const tl = gsap.timeline({ paused: document.hidden })
+        tl.to(textEl, { opacity: 1, duration: 0.45, ease: 'power1.out' }, 0.05)
+        // primeiro somem a frase e o HUD (no escuro), só depois o fundo — sem a
+        // frase branca por cima do hero claro durante o fade
+        tl.to([textEl, hud], { opacity: 0, duration: 0.25, ease: 'power1.in' }, 1.95)
+        tl.call(
+          () => {
+            exiting = true
+            unlock()
+            fireReveal()
+          },
+          [],
+          2.2,
+        )
+        tl.to(root, { opacity: 0, duration: 0.4, ease: 'power1.out' }, 2.2)
+        tl.call(finish)
+        active = tl
+      }
+      void fontsReady.then(() => {
+        window.clearTimeout(fontTimer)
+        run()
+      })
       skip = () => {
         if (exiting) return
         exiting = true
-        tl.kill()
+        active?.kill()
         finish()
       }
     } else {
       /* ── intro completa ── */
       const field = new ParticleField(canvas)
       const sctx = document.createElement('canvas').getContext('2d', { willReadFrequently: true })
-      const fam =
-        getComputedStyle(html).getPropertyValue('--font-bricolage').trim() || '"Bricolage Grotesque", sans-serif'
-      const fontSpec = `800 120px ${fam}`
+      let B: Formation = EMPTY // logo, amostrado na saída
 
       // loop de render no ticker do GSAP (mesmo rAF da timeline; para com a aba oculta)
       let last = performance.now()
@@ -931,9 +1043,19 @@ export default function Intro({ onReveal, onComplete }: Props) {
       }
 
       /** Fases 4–5 (normal ~1.6s, ao pular ~0.9s). */
+      let exitFast = false
       const runExit = (fast: boolean, origin: Dot | null) => {
-        if (exiting) return
+        if (exiting) {
+          // pular durante a saída natural: acelera o que falta (termina em ≲0.85s)
+          if (!fast || exitFast || !active || finished) return
+          exitFast = true
+          pulseTl?.kill()
+          const rest = (active.duration() - active.time()) / active.timeScale()
+          if (rest > 0.85) active.timeScale(active.timeScale() * (rest / 0.85))
+          return
+        }
         exiting = true
+        exitFast = fast
         root.dataset.phase = 'exit'
         master?.kill()
         if (fast) {
@@ -985,10 +1107,15 @@ export default function Intro({ onReveal, onComplete }: Props) {
 
       const start = () => {
         if (disposed || exiting) return
-        if (!sctx || !field.ready) {
-          // sem canvas 2D: logo estático e saída normal (nunca prende o usuário)
+        const G = chars.length
+        if (!sctx || !field.ready || !G) {
+          // sem canvas 2D: frase nítida, logo estático e saída normal (nunca prende o usuário)
+          gsap.set(chars, { opacity: 1 })
           const tl = gsap.timeline({ paused: document.hidden })
-          tl.to(markWrap, { opacity: 1, duration: 0.5, ease: 'power1.out' }, 0.2).call(() => runExit(false, null), [], 1.4)
+          tl.fromTo(textEl, { opacity: 0 }, { opacity: 1, duration: 0.5, ease: 'power1.out' }, 0.1)
+            .to(textEl, { opacity: 0, duration: 0.35, ease: 'power1.in' }, 2.1)
+            .to(markWrap, { opacity: 1, duration: 0.5, ease: 'power1.out' }, 2.35)
+            .call(() => runExit(false, null), [], 3.4)
           master = tl
           active = tl
           return
@@ -996,13 +1123,17 @@ export default function Intro({ onReveal, onComplete }: Props) {
         const w = root.clientWidth
         const h = root.clientHeight
         field.resize(w, h)
-        sctx.canvas.width = w
-        sctx.canvas.height = h
-        const budget = Math.round((w < 768 ? 1500 : 3000) * ((navigator.hardwareConcurrency || 8) <= 4 ? 0.75 : 1))
-        const A = sampleGlyphs(sctx, textGlyphs(sctx, w, h, fam), fam, budget, 0.08)
-        const fontOk = document.fonts ? document.fonts.check(fontSpec) : true
-        let B = markEl ? sampleGlyphs(sctx, markGlyphs(markEl, sctx, fam), fam, budget, 0) : EMPTY
-        field.initText(A, T_SWIRL)
+        const mobile = w < 768
+        const cap = Math.round(
+          (mobile ? 5000 : w >= 1800 ? 14000 : 10000) * ((navigator.hardwareConcurrency || 8) <= 4 ? 0.6 : 1),
+        )
+        const minStep = mobile ? 2.2 : 2.5
+        const sample = (el: HTMLElement) => {
+          sctx.canvas.width = root.clientWidth
+          sctx.canvas.height = root.clientHeight
+          return sampleGlyphs(sctx, domGlyphs(el, sctx, fam), fam, cap, minStep)
+        }
+        field.initText(sample(textEl))
         root.dataset.phase = 'text'
 
         const counter = { v: 0 }
@@ -1025,13 +1156,47 @@ export default function Intro({ onReveal, onComplete }: Props) {
           },
           0.05,
         )
+        // cada letra "solidifica" em texto nítido enquanto suas partículas pousam (ordem de leitura)
+        chars.forEach((el, g) => {
+          tl.fromTo(
+            el,
+            { opacity: 0, filter: 'blur(6px)' },
+            { opacity: 1, filter: 'blur(0px)', duration: SOLID_DUR, ease: 'power2.out', clearProps: 'filter' },
+            glyphAt(g, G) + SOLID_AT,
+          )
+        })
+        // leitura: só o ponto vermelho brilha, uma vez
+        if (periodEl) {
+          tl.fromTo(
+            periodEl,
+            { textShadow: '0 0 0em rgba(224,32,32,0)' },
+            {
+              textShadow: '0 0 0.35em rgba(224,32,32,0.55)',
+              duration: 0.45,
+              ease: 'sine.inOut',
+              yoyo: true,
+              repeat: 1,
+            },
+            T_GLOW,
+          )
+        }
+        tl.call(
+          () => {
+            // re-mede: a frase pode ter mudado de lugar (fonte que chegou tarde, barra do navegador)
+            const A = sample(textEl)
+            B = markEl ? sample(markEl) : EMPTY
+            field.alpha = 0
+            field.initStatic(A)
+            root.dataset.phase = 'dissolve'
+          },
+          [],
+          T_DISSOLVE,
+        )
+          .fromTo(field, { alpha: 0 }, { alpha: 1, duration: 0.12, ease: 'none', immediateRender: false }, T_DISSOLVE)
+          .to(textEl, { opacity: 0, duration: 0.14, ease: 'power1.in' }, T_DISSOLVE)
           .to(field, { charge: 1, duration: T_BURST - T_CHARGE, ease: 'power2.in' }, T_CHARGE)
           .call(
             () => {
-              // a fonte chegou depois do timeout? remede o logo com a fonte certa
-              if (!fontOk && markEl && document.fonts?.check(fontSpec)) {
-                B = sampleGlyphs(sctx, markGlyphs(markEl, sctx, fam), fam, budget, 0)
-              }
               field.toMark(B, T_BURST)
               root.dataset.phase = 'logo'
             },
@@ -1047,19 +1212,6 @@ export default function Intro({ onReveal, onComplete }: Props) {
         active = tl
       }
 
-      // aguarda a Bricolage (máx. 1.2s) antes de amostrar o texto
-      let fontTimer = 0
-      const fontsReady: Promise<void> = document.fonts
-        ? Promise.race([
-            document.fonts.load(fontSpec).then(
-              () => undefined,
-              () => undefined,
-            ),
-            new Promise<void>((resolve) => {
-              fontTimer = window.setTimeout(resolve, 1200)
-            }),
-          ])
-        : Promise.resolve()
       void fontsReady.then(() => {
         window.clearTimeout(fontTimer)
         start()
@@ -1113,11 +1265,11 @@ export default function Intro({ onReveal, onComplete }: Props) {
         }
         field.resize(w, h)
         field.shift(dx, dy)
+        shiftFormation(B, dx, dy)
       })
       ro.observe(root)
 
       cleanups.push(() => {
-        window.clearTimeout(fontTimer)
         ro.disconnect()
         root.removeEventListener('pointermove', onMove)
         root.removeEventListener('pointerdown', onDown)
@@ -1152,6 +1304,9 @@ export default function Intro({ onReveal, onComplete }: Props) {
         <style>{NOSCRIPT_CSS}</style>
       </noscript>
 
+      {/* leitores de tela recebem a frase inteira, uma vez (as letras visuais ficam ocultas) */}
+      <p className="sr-only">{SENTENCE_TEXT}</p>
+
       <div ref={innerRef} className="absolute inset-0">
         {/* textura: pontos sutis + luz central + grão (estáticos) */}
         <div
@@ -1173,14 +1328,43 @@ export default function Intro({ onReveal, onComplete }: Props) {
           className="pointer-events-none absolute left-0 top-0 rounded-full opacity-0 [background:radial-gradient(circle,rgba(224,32,32,0.5)_0%,rgba(224,32,32,0.16)_38%,rgba(224,32,32,0)_70%)]"
         />
 
+        {/* frase de boas-vindas — tipografia real; as partículas são amostradas das letras dela */}
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 grid place-items-center px-4">
+          <p
+            ref={textRef}
+            className="gam-intro-text text-center font-display font-extrabold leading-none tracking-[-0.025em] text-white"
+          >
+            {SENTENCE.map((groups, li) => (
+              <span key={li} className="block">
+                {groups.map((group, gi) => (
+                  <Fragment key={gi}>
+                    {gi > 0 && ' '}
+                    <span className="whitespace-nowrap">
+                      {Array.from(group, (ch, ci) =>
+                        ch === ' ' ? (
+                          ' '
+                        ) : (
+                          <span key={ci} data-c="" className={ch === '.' ? 'text-red' : undefined}>
+                            {ch}
+                          </span>
+                        ),
+                      )}
+                    </span>
+                  </Fragment>
+                ))}
+              </span>
+            ))}
+          </p>
+        </div>
+
         {/* logo nítido — as partículas são amostradas a partir da posição real dele */}
         <div
           ref={markRef}
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 grid place-items-center opacity-0 motion-reduce:opacity-100"
+          className="pointer-events-none absolute inset-0 grid place-items-center opacity-0"
           style={{ fontSize: 'min(34vw, 44vh, 22rem)' }}
         >
-          <Mark tone="dark" />
+          <Mark tone="dark" className="tracking-[-0.02em]" />
         </div>
 
         {/* HUD */}

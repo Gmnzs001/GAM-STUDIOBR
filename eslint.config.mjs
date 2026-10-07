@@ -1,18 +1,13 @@
+import js from "@eslint/js";
+import tseslint from "typescript-eslint";
+import reactHooks from "eslint-plugin-react-hooks";
 import { defineConfig, globalIgnores } from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals";
-import nextTs from "eslint-config-next/typescript";
 
-const eslintConfig = defineConfig([
-  ...nextVitals,
-  ...nextTs,
-  // Override default ignores of eslint-config-next.
-  globalIgnores([
-    // Default ignores of eslint-config-next:
-    ".next/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
-  ]),
+// Lint enxuto: JS + TypeScript + regras de hooks do React.
+// (eslint-config-next foi removido: puxava dependências com vulnerabilidades.)
+export default defineConfig([
+  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts"]),
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  reactHooks.configs.flat["recommended-latest"],
 ]);
-
-export default eslintConfig;

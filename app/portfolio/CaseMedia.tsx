@@ -56,7 +56,6 @@ export default function CaseMedia({
 
   // URL externa: <img> simples (domínios externos não estão liberados no next/image).
   return (
-    // eslint-disable-next-line @next/next/no-img-element
     <img
       src={src}
       alt={alt}

@@ -1,4 +1,4 @@
----
+l---
 name: gam-studio-workflow
 description: Convenções do site da GAM Studio (Next.js). Use SEMPRE que for criar ou editar páginas, seções ou componentes deste projeto, ou quando o Gustavo pedir qualquer coisa do site.
 ---
@@ -32,6 +32,10 @@ description: Convenções do site da GAM Studio (Next.js). Use SEMPRE que for cr
 - Trocar a stack ou reinstalar libs.
 
 ## Fechar uma tarefa
-- `npx tsc --noEmit && npm run lint && npm run build` precisam passar.
+- `npx tsc --noEmit && npm run lint && npm run build` precisam passar. `npm audit` deve ficar em 0.
 - CSS novo não aparece no dev? Pare o dev, apague `.next/dev` e suba de novo.
-- Publicar = commit + `git push origin main` no repositório `Gmnzs001/GAM-STUDIOBR`.
+- Publicar = commit + `git push origin main` no repositório `Gmnzs001/GAM-STUDIOBR`. A Hostinger (Node.js web app, domínio `gamstudiobr.com`) faz o build e publica sozinha a cada push.
+- O build usa `next build --webpack` DE PROPÓSITO: o Turbopack quebra no build da Hostinger ("node process exited before we could connect"). Não volte para o Turbopack.
+- Se o deploy falhar, peça ao Gustavo o log (Hostinger → Implantações → a que falhou → copiar o log).
+- Sem shadcn/radix/tw-animate: foram removidos. Botões = `components/system/Button`.
+- Intro da home: `components/Intro.tsx` (texto real em DOM + partículas só no movimento).
