@@ -7,7 +7,7 @@ import {
 
 // ─── Domínio ──────────────────────────────────────────────────────────────────
 // Troque pela URL definitiva antes do deploy (usada em metadata, sitemap, robots e JSON-LD)
-export const SITE_URL = 'https://gamstudio.com.br'
+export const SITE_URL = 'https://gamstudiobr.com'
 
 // ─── Contato ──────────────────────────────────────────────────────────────────
 export const WHATSAPP_NUMBER = '5562992589599'
