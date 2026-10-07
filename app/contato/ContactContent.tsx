@@ -116,7 +116,6 @@ function WhatsAppCard() {
         href={WA_URL}
         target="_blank"
         rel="noopener noreferrer"
-        data-cursor="Chamar"
         className="group/wa relative block p-7 focus-visible:outline-offset-[-6px] md:p-8"
       >
         <WhatsAppIcon className="pointer-events-none absolute -bottom-10 -right-8 size-52 rotate-[-14deg] text-white/[0.08] transition-transform duration-700 ease-[var(--ease-out-expo)] group-hover/wa:rotate-[-4deg] group-hover/wa:scale-105" />
@@ -157,7 +156,6 @@ function InstagramCard() {
         href={INSTAGRAM_URL}
         target="_blank"
         rel="noopener noreferrer"
-        data-cursor="Seguir"
         className="group/ig flex items-center gap-5 p-6 focus-visible:outline-offset-[-6px] md:p-7"
       >
         <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-ink text-white transition-colors duration-300 group-hover/ig:bg-red">

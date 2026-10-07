@@ -71,7 +71,6 @@ export default function ServiceIndex() {
                     if (e.pointerType === 'mouse') setActive(i)
                   }}
                   onFocus={() => setActive(null)}
-                  data-cursor="Ver"
                   className={[
                     'group/row relative isolate grid grid-cols-[2.25rem_minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 overflow-hidden border-b border-line px-1 py-6 outline-none md:grid-cols-[3.5rem_minmax(0,1fr)_auto] md:px-5 md:py-7',
                     'lg:grid-cols-[4rem_minmax(0,1.15fr)_minmax(0,1fr)_auto] lg:gap-x-8',

@@ -14,7 +14,7 @@ description: Convenções do site da GAM Studio (Next.js). Use SEMPRE que for cr
 ## Onde fica cada coisa
 - `lib/site.ts`: TODO o conteúdo (contatos, links WhatsApp/Instagram, serviços, stats, cases da home, depoimentos, fundador). Edite aqui, não nos componentes. Não invente conteúdo fora dele.
 - `app/portfolio/PortfolioGallery.tsx`: cases da página Portfólio (`CASES`).
-- `components/system/`: primitivos (`Reveal`, `RevealText`, `Kicker`/`SectionHeading`, `Button`, `SpotlightCard`, `CountUp`, `MarqueeBand`, `PageHero`, `Logo`, `Cursor`, `AmbientBackground`).
+- `components/system/`: primitivos (`Reveal`, `RevealText`, `Kicker`/`SectionHeading`, `Button`, `SpotlightCard`, `CountUp`, `MarqueeBand`, `PageHero`, `Logo`, `AmbientBackground`).
 - `components/`: seções da home. `app/<página>/`: páginas internas (abrem com `PageHero` e fecham com `Footer`).
 - `lib/intro.tsx`: `useRevealed()`. Na home, Hero/Navbar esperam a intro terminar. `/?intro=0` pula a intro.
 - `/dev-preview/system`: vitrine dos primitivos (bloqueada no robots, manter).

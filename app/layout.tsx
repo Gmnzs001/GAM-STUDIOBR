@@ -4,7 +4,6 @@ import './globals.css'
 import LenisProvider from '@/components/providers/LenisProvider'
 import ScrollProgressBar from '@/components/ScrollProgressBar'
 import AmbientBackground from '@/components/system/AmbientBackground'
-import Cursor from '@/components/system/Cursor'
 import { SITE_URL, FOUNDED_YEAR, WHATSAPP_NUMBER, INSTAGRAM_URL, FOUNDER, SERVICES } from '@/lib/site'
 
 // Display: Bricolage Grotesque (variável, com eixos de largura e tamanho óptico)
@@ -125,7 +124,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <LenisProvider>
           <AmbientBackground />
           <ScrollProgressBar />
-          <Cursor />
           {/* Conteúdo acima do fundo vivo (z-0) e do grain (z-1) */}
           <div className="relative z-[2]">{children}</div>
         </LenisProvider>

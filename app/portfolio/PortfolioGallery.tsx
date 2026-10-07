@@ -166,7 +166,6 @@ function CaseCard({ c, featured, onOpen }: { c: Case; featured: boolean; onOpen:
       className="h-full rounded-[28px] bg-surface shadow-[var(--shadow-soft)] ring-1 ring-line transition-shadow duration-500 hover:shadow-[var(--shadow-lift)]"
     >
       <div
-        data-cursor="Ver"
         onPointerMove={trackCoverPointer}
         onPointerLeave={resetCoverPointer}
         className={cn('group/case relative flex h-full flex-col p-2', featured && 'lg:grid lg:grid-cols-12 lg:gap-2')}

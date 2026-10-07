@@ -23,7 +23,6 @@ function ServiceCard({ service }: { service: Service }) {
   return (
     <Link
       href={`/servicos#${service.slug}`}
-      data-cursor="Ver"
       aria-label={`${service.name}: ${service.short}`}
       className={[
         'group/card relative isolate flex h-[300px] w-[284px] shrink-0 flex-col overflow-hidden rounded-[28px] bg-surface p-7 sm:w-[340px]',

@@ -48,7 +48,6 @@ function CaseCard({ item, variant, mdSpan2, accent, stretch }: { item: HomeCase;
       className="h-full rounded-[28px] bg-night-2 ring-1 ring-night-line transition-shadow duration-500 hover:shadow-[0_30px_70px_-30px_rgba(0,0,0,0.8)] hover:ring-white/15"
     >
       <div
-        data-cursor="Ver"
         onPointerMove={trackCoverPointer}
         onPointerLeave={resetCoverPointer}
         className={cn('group/case relative flex h-full flex-col p-2', wide && 'lg:grid lg:grid-cols-2 lg:gap-2')}

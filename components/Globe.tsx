@@ -581,7 +581,6 @@ export default function Globe({ className, play }: { className?: string; play?: 
       ref={wrapRef}
       role="img"
       aria-label="Globo terrestre girando, com Goiânia conectada a Nova York e Lisboa"
-      data-cursor="Arraste"
       className={cn('relative aspect-square w-full touch-pan-y select-none', className)}
     >
       {/* brilho vermelho suave atrás da esfera (estático) */}

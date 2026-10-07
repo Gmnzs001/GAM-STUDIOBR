@@ -377,19 +377,6 @@
   }
 }
 
-/* Custom cursor: only hide the native one when our cursor is mounted */
-html.has-gam-cursor,
-html.has-gam-cursor a,
-html.has-gam-cursor button,
-html.has-gam-cursor [role="button"] {
-  cursor: none;
-}
-html.has-gam-cursor input,
-html.has-gam-cursor textarea,
-html.has-gam-cursor select {
-  cursor: text;
-}
-
 /* Lenis */
 html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-smooth { scroll-behavior: auto !important; }
