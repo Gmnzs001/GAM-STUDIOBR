@@ -1,10 +1,12 @@
 'use client'
 
-import { useState } from 'react'
-import LoadingScreen from '@/components/LoadingScreen'
+import { useCallback, useState } from 'react'
+import { IntroContext, hasIntroPlayed, markIntroPlayed } from '@/lib/intro'
+import { SERVICES } from '@/lib/site'
+import Intro from '@/components/Intro'
 import Navbar from '@/components/Navbar'
-import { HeroParallax } from '@/components/HeroParallax'
-import SectionDivider from '@/components/SectionDivider'
+import Hero from '@/components/Hero'
+import MarqueeBand from '@/components/system/MarqueeBand'
 import Services from '@/components/Services'
 import About from '@/components/About'
 import Cases from '@/components/Cases'
@@ -12,46 +14,38 @@ import Testimonials from '@/components/Testimonials'
 import CTASection from '@/components/CTASection'
 import Footer from '@/components/Footer'
 
-const BASE_CASES = [
-  { title: 'Redesign E-commerce',       link: '#portfolio', thumbnail: 'https://image.thum.io/get/width/1200/crop/800/https://linear.app' },
-  { title: 'Tráfego Pago EUA',          link: '#portfolio', thumbnail: 'https://image.thum.io/get/width/1200/crop/800/https://stripe.com' },
-  { title: 'Branding Startup',          link: '#portfolio', thumbnail: 'https://image.thum.io/get/width/1200/crop/800/https://vercel.com' },
-  { title: 'Gestão Redes Moda',         link: '#portfolio', thumbnail: 'https://image.thum.io/get/width/1200/crop/800/https://framer.com' },
-  { title: 'Landing Page Lançamento',   link: '#portfolio', thumbnail: 'https://image.thum.io/get/width/1200/crop/800/https://figma.com' },
-  { title: 'Estratégia 360 Franquias',  link: '#portfolio', thumbnail: 'https://image.thum.io/get/width/1200/crop/800/https://apple.com' },
-  { title: 'SEO Orgânico B2B',          link: '#portfolio', thumbnail: 'https://image.thum.io/get/width/1200/crop/800/https://notion.so' },
-  { title: 'Identidade Visual Tech',    link: '#portfolio', thumbnail: 'https://image.thum.io/get/width/1200/crop/800/https://github.com' },
-  { title: 'Campanha de Produto',       link: '#portfolio', thumbnail: 'https://image.thum.io/get/width/1200/crop/800/https://awwwards.com' },
-  { title: 'Social Media Premium',      link: '#portfolio', thumbnail: 'https://image.thum.io/get/width/1200/crop/800/https://dribbble.com' },
-]
-// HeroParallax needs 15 products (3 rows × 5) — cycle the 10 cases
-const HERO_PRODUCTS = Array.from({ length: 15 }, (_, i) => BASE_CASES[i % BASE_CASES.length])
+const BAND_ITEMS = SERVICES.map((s) => s.name)
 
 export default function Home() {
-  const [loaded, setLoaded] = useState(false)
+  // O site é renderizado desde o início (SEO); a intro fica por cima.
+  // `revealed` libera as animações de entrada do Hero/Navbar.
+  // A intro toca uma vez por carregamento: voltando à home pela navegação
+  // interna ela não repete. (?intro=0 na URL também pula — tratado no <Intro>.)
+  const [skipIntro] = useState(hasIntroPlayed)
+  const [revealed, setRevealed] = useState(skipIntro)
+  const [introOn, setIntroOn] = useState(!skipIntro)
+
+  const onReveal = useCallback(() => {
+    markIntroPlayed()
+    setRevealed(true)
+  }, [])
+  const onComplete = useCallback(() => setIntroOn(false), [])
 
   return (
-    <>
-      {!loaded && <LoadingScreen onComplete={() => setLoaded(true)} />}
-      {loaded && (
-        <>
-          <Navbar />
-          <main>
-            <HeroParallax products={HERO_PRODUCTS} />
-            <SectionDivider />
-            <Services />
-            <SectionDivider />
-            <About />
-            <SectionDivider />
-            <Cases />
-            <SectionDivider />
-            <Testimonials />
-            <SectionDivider />
-            <CTASection />
-          </main>
-          <Footer />
-        </>
-      )}
-    </>
+    <IntroContext.Provider value={revealed}>
+      {introOn && <Intro onReveal={onReveal} onComplete={onComplete} />}
+      <Navbar />
+      <main>
+        <Hero />
+        <MarqueeBand items={BAND_ITEMS} />
+        <Services />
+        <About />
+        <Cases />
+        <Testimonials />
+        <CTASection />
+      </main>
+      {/* A home já termina com o CTA + formulário — footer sem o CTA gigante */}
+      <Footer cta={false} />
+    </IntroContext.Provider>
   )
 }

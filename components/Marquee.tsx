@@ -17,7 +17,7 @@ interface MarqueeProps extends ComponentPropsWithoutRef<'div'> {
 export function Marquee({ className, reverse = false, pauseOnHover = false, children, vertical = false, repeat = 4, ariaLabel, ariaLive = 'off', ariaRole = 'marquee', ...props }: MarqueeProps) {
   const marqueeRef = useRef<HTMLDivElement>(null);
   return (
-    <div {...props} ref={marqueeRef} data-slot="marquee" className={cn('group flex overflow-hidden p-2 [--duration:40s] [--gap:1rem] [gap:var(--gap)]', { 'flex-row': !vertical, 'flex-col': vertical }, className)} aria-label={ariaLabel} aria-live={ariaLive} role={ariaRole} tabIndex={0}>
+    <div {...props} ref={marqueeRef} data-slot="marquee" className={cn('group flex overflow-hidden p-2 [--duration:40s] [--gap:1rem] [gap:var(--gap)]', { 'flex-row': !vertical, 'flex-col': vertical }, className)} aria-label={ariaLabel} aria-live={ariaLive} role={ariaRole}>
       {React.useMemo(() => (
         <>
           {Array.from({ length: repeat }, (_, i) => (

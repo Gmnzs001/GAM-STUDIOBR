@@ -1,10 +1,18 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
-import gsap from 'gsap'
-import ScrollTrigger from 'gsap/ScrollTrigger'
-
-gsap.registerPlugin(ScrollTrigger)
+import { useCallback, useMemo, useRef, useState } from 'react'
+import { AnimatePresence, motion, useInView } from 'framer-motion'
+import { ArrowUpRight } from 'lucide-react'
+import SpotlightCard from '@/components/system/SpotlightCard'
+import CountUp from '@/components/system/CountUp'
+import Button from '@/components/system/Button'
+import { Reveal } from '@/components/system/Reveal'
+import { Kicker } from '@/components/system/SectionHeading'
+import { trackCoverPointer, resetCoverPointer, CATEGORY_TINT } from '@/components/CaseCover'
+import { WA_URL } from '@/lib/site'
+import { cn } from '@/lib/utils'
+import CaseMedia from './CaseMedia'
+import CaseDialog from './CaseDialog'
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  ★ PROJETOS REAIS — preencha aqui com os seus dados
@@ -14,15 +22,20 @@ gsap.registerPlugin(ScrollTrigger)
 //
 //  category deve ser um dos valores de ALL_CATEGORIES abaixo.
 //  image: cole o caminho /images/nome-do-arquivo.jpg  OU uma URL https://...
-//         enquanto for uma string sem '/' ou 'http', aparece placeholder cinza
+//         (imagens locais ficam em /public/images/ → caminho '/images/arquivo.jpg')
+//         enquanto for uma string sem '/' ou 'http', aparece a capa generativa
+//         automática da categoria (arte da GAM, sem foto)
+//
+//  Cada case abre um painel de detalhes ao clicar — lá aparecem o texto
+//  completo de `result`, todas as `tags` e o botão de orçamento.
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-type Case = {
+export type Case = {
   id:       string
   title:    string
   client:   string
   segment:  string         // ex: 'E-commerce', 'Clínica', 'Startup SaaS'
   category: 'Web' | 'Marketing' | 'Branding' | 'Social Media'
-  image:    string         // /images/... ou https://...  (vazio = placeholder)
+  image:    string         // /images/... ou https://...  (vazio = capa generativa)
   tags:     string[]       // serviços / tecnologias usadas
   result:   string         // descrição do que foi feito + resultado obtido
   year:     string
@@ -31,66 +44,88 @@ type Case = {
     value:   number        // 0 = não exibe número
     suffix:  string        // ex: '%'  'x'  'k'  ' dias'
     label:   string        // ex: 'no tráfego orgânico'
-    isDecimal?: boolean    // true = exibe com 1 casa decimal (4.8x)
+    isDecimal?: boolean    // true = exibe com 1 casa decimal (4,8x)
   }
 }
 
 const CASES: Case[] = [
-  // ── CASE 1 ──────────────────────────────────────────────────────────────
   {
-    id:       'case-01',
-    title:    'COLE O NOME DO PROJETO',
-    client:   'COLE O NOME DO CLIENTE',
-    segment:  'COLE O SEGMENTO',
+    id:       'clinica-estetica',
+    title:    'Clínica Estética Premium',
+    client:   'Clínica Estética Renovar',
+    segment:  'Saúde e estética',
     category: 'Web',
-    image:    'COLE_IMAGEM_DO_PROJETO_AQUI',
-    tags:     ['SERVIÇO 1', 'SERVIÇO 2', 'FERRAMENTA'],
+    image:    '',
+    tags:     ['Landing Page', 'Copywriting', 'Google ADS', 'Agendamento online'],
     result:
-      'COLE A DESCRIÇÃO: explique o que foi feito, qual problema resolveu e qual resultado concreto o cliente obteve. Seja específico.',
+      'Landing page de alta conversão com agendamento online integrado, copy orientada a objeções e campanhas de tráfego apontando para ela. As conversões subiram 340% e os agendamentos online triplicaram em três meses.',
     year:   '2025',
-    metric: { prefix: '+', value: 0, suffix: '%', label: 'COLE A MÉTRICA DO RESULTADO' },
+    metric: { prefix: '+', value: 340, suffix: '%', label: 'em conversões' },
   },
-  // ── CASE 2 ──────────────────────────────────────────────────────────────
   {
-    id:       'case-02',
-    title:    'COLE O NOME DO PROJETO',
-    client:   'COLE O NOME DO CLIENTE',
-    segment:  'COLE O SEGMENTO',
+    id:       'ecommerce-suplementos',
+    title:    'E-commerce de Suplementos',
+    client:   'Lima Suplementos',
+    segment:  'E-commerce',
     category: 'Marketing',
-    image:    'COLE_IMAGEM_DO_PROJETO_AQUI',
-    tags:     ['SERVIÇO 1', 'CANAL 2'],
+    image:    '',
+    tags:     ['Google ADS', 'Shopping', 'Remarketing', 'Rastreamento'],
     result:
-      'COLE A DESCRIÇÃO: explique o que foi feito, qual problema resolveu e qual resultado concreto o cliente obteve.',
+      'Estrutura completa de Google ADS (pesquisa, Shopping e remarketing) com rastreamento de conversões configurado do zero. A operação faturou R$120k já no primeiro mês de campanha.',
     year:   '2025',
-    metric: { prefix: '', value: 0, suffix: 'x', label: 'COLE A MÉTRICA', isDecimal: true },
+    metric: { prefix: 'R$', value: 120, suffix: 'k', label: 'faturados no 1º mês' },
   },
-  // ── CASE 3 ──────────────────────────────────────────────────────────────
   {
-    id:       'case-03',
-    title:    'COLE O NOME DO PROJETO',
-    client:   'COLE O NOME DO CLIENTE',
-    segment:  'COLE O SEGMENTO',
+    id:       'moda-sustentavel',
+    title:    'Marca de Moda Sustentável',
+    client:   'Marca Eco Verde',
+    segment:  'Moda',
     category: 'Branding',
-    image:    'COLE_IMAGEM_DO_PROJETO_AQUI',
-    tags:     ['SERVIÇO 1', 'ENTREGÁVEL 2'],
+    image:    '',
+    tags:     ['Branding', 'Identidade visual', 'Manual de marca'],
     result:
-      'COLE A DESCRIÇÃO: explique o que foi feito, qual problema resolveu e qual resultado concreto o cliente obteve.',
-    year:   '2025',
-    metric: { prefix: '', value: 0, suffix: ' dias', label: 'COLE A MÉTRICA' },
+      'Identidade visual completa, do conceito ao manual de marca, traduzindo a essência eco-friendly em logo, paleta, tipografia e aplicações. Com a nova marca, a conversão da loja subiu 200%.',
+    year:   '2024',
+    metric: { prefix: '+', value: 200, suffix: '%', label: 'em conversão' },
   },
-  // ── CASE 4 (opcional — delete se não tiver) ──────────────────────────────
   {
-    id:       'case-04',
-    title:    'COLE O NOME DO PROJETO',
-    client:   'COLE O NOME DO CLIENTE',
-    segment:  'COLE O SEGMENTO',
-    category: 'Social Media',
-    image:    'COLE_IMAGEM_DO_PROJETO_AQUI',
-    tags:     ['REDE SOCIAL', 'CONTEÚDO'],
+    id:       'construtora-regional',
+    title:    'Construtora Regional',
+    client:   'Construtora Alves & Lima',
+    segment:  'Construção civil',
+    category: 'Web',
+    image:    '',
+    tags:     ['Criação de Sites', 'Redes Sociais', 'Google ADS', 'Captação de leads'],
     result:
-      'COLE A DESCRIÇÃO: explique o que foi feito, qual problema resolveu e qual resultado concreto o cliente obteve.',
+      'Site com páginas dedicadas para 3 empreendimentos e captação de leads integrada, somado à gestão de redes e tráfego pago. Em seis meses, o custo de aquisição de clientes caiu 40%.',
+    year:   '2024',
+    metric: { prefix: '-', value: 40, suffix: '%', label: 'no custo por cliente' },
+  },
+  {
+    id:       'restaurante-gourmet',
+    title:    'Restaurante Gourmet',
+    client:   'Casa gastronômica',
+    segment:  'Gastronomia',
+    category: 'Social Media',
+    image:    '',
+    tags:     ['Redes Sociais', 'Produção de Conteúdo', 'Fotografia'],
+    result:
+      'Gestão completa do Instagram com linha editorial, produção de foto e vídeo dos pratos e calendário de conteúdo. O perfil ganhou 15 mil seguidores orgânicos em 90 dias, sem mídia paga.',
     year:   '2025',
-    metric: { prefix: '+', value: 0, suffix: 'k', label: 'COLE A MÉTRICA' },
+    metric: { prefix: '+', value: 15, suffix: 'k', label: 'seguidores em 90 dias' },
+  },
+  {
+    id:       'startup-tecnologia',
+    title:    'Startup de Tecnologia',
+    client:   'Startup SaaS B2B',
+    segment:  'Tecnologia',
+    category: 'Branding',
+    image:    '',
+    tags:     ['Branding', 'Motion design', 'SaaS B2B'],
+    result:
+      'Branding completo para um SaaS B2B, com identidade visual, sistema de ícones e motion design para produto e lançamento, deixando a marca pronta para competir no mercado internacional.',
+    year:   '2025',
+    metric: { prefix: '', value: 0, suffix: '', label: 'branding + motion' },
   },
 ]
 
@@ -101,215 +136,135 @@ const FILTERS = [
   ...ALL_CATEGORIES.filter((cat) => CASES.some((c) => c.category === cat)),
 ]
 
-// ── Imagem ou placeholder cinza ───────────────────────────────────────────────
-function CaseImage({ src, alt, className }: { src: string; alt: string; className?: string }) {
-  const isReal = src.startsWith('http') || src.startsWith('/')
-  if (isReal) {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img src={src} alt={alt} className={className} loading="lazy" />
-  }
+const EASE = [0.16, 1, 0.3, 1] as const
+
+// ── Métrica (some quando value = 0) ───────────────────────────────────────────
+export function CaseMetric({ metric, size = 'md', className }: { metric: Case['metric']; size?: 'md' | 'lg'; className?: string }) {
+  if (!(metric.value > 0)) return null
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#181818] to-[#111111]">
-      <div className="w-10 h-px bg-[#2A2A2A] mb-3" />
-      <p className="text-[#2E2E2E] text-[10px] font-mono uppercase tracking-widest text-center px-4">
-        cole a imagem<br />do projeto aqui
-      </p>
-      <div className="w-10 h-px bg-[#2A2A2A] mt-3" />
+    <div className={cn('flex items-end gap-3', className)}>
+      <CountUp
+        value={metric.value}
+        prefix={metric.prefix ?? ''}
+        suffix={metric.suffix}
+        decimals={metric.isDecimal ? 1 : 0}
+        className={cn('type-num whitespace-nowrap text-ink', size === 'lg' ? 'text-[clamp(3rem,6vw,4.5rem)]' : 'text-[2.6rem]')}
+      />
+      <span className="max-w-[18ch] pb-1 text-sm leading-tight text-ink-2">{metric.label}</span>
     </div>
   )
 }
 
-// ── Métrica ou placeholder ────────────────────────────────────────────────────
-function MetricDisplay({
-  metric, countRef, compact,
-}: {
-  metric: Case['metric']
-  countRef?: React.RefObject<HTMLSpanElement | null>
-  compact?: boolean
-}) {
-  const { prefix = '', suffix, label, value, isDecimal } = metric
-  const staticValue = value > 0 ? (isDecimal ? value.toFixed(1) : value.toString()) : null
-
-  if (!staticValue) {
-    return (
-      <p className={`text-[#2A2A2A] font-mono ${compact ? 'text-xs' : 'text-xs'}`}>
-        + métrica do resultado
-      </p>
-    )
-  }
-  return compact ? (
-    <div className="shrink-0 text-right">
-      <div className="text-3xl font-black text-white tabular-nums leading-none">
-        <span className="text-[#E02020] text-xl">{prefix}</span>
-        <span ref={countRef}>{staticValue}</span>
-        <span className="text-[#E02020]">{suffix}</span>
-      </div>
-      <p className="text-[#9898A4] text-[10px] mt-0.5 max-w-[100px] text-right leading-tight">{label}</p>
-    </div>
-  ) : (
-    <div className="flex items-baseline gap-1 mb-5">
-      <span className="text-5xl font-black text-white leading-none">
-        <span className="text-[#E02020]">{prefix}</span>
-        <span ref={countRef}>{staticValue}</span>
-        <span className="text-[#E02020]">{suffix}</span>
-      </span>
-      <span className="text-[#888892] text-sm ml-2">{label}</span>
-    </div>
-  )
-}
-
-// ── Desktop card (3D tilt + hover overlay) ────────────────────────────────────
-function CaseCard({ c }: { c: Case }) {
-  const cardRef  = useRef<HTMLDivElement>(null)
-  const countRef = useRef<HTMLSpanElement | null>(null)
-  const didCount = useRef(false)
-
-  const onMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const el = cardRef.current
-    if (!el || window.innerWidth < 1024) return
-    const r = el.getBoundingClientRect()
-    const x = (e.clientX - r.left) / r.width  - 0.5
-    const y = (e.clientY - r.top)  / r.height - 0.5
-    gsap.to(el, { rotateX: -y * 7, rotateY: x * 7, scale: 1.02, duration: 0.35, ease: 'power2.out', transformPerspective: 900 })
-  }, [])
-
-  const onLeave = useCallback(() => {
-    gsap.to(cardRef.current, { rotateX: 0, rotateY: 0, scale: 1, duration: 0.6, ease: 'elastic.out(1,0.35)' })
-  }, [])
-
-  useEffect(() => {
-    const el = countRef.current
-    if (!el || c.metric.value === 0 || didCount.current) return
-    const io = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting || didCount.current) return
-      didCount.current = true
-      const obj = { v: 0 }
-      gsap.to(obj, {
-        v: c.metric.value,
-        duration: 1.8,
-        ease: 'power2.out',
-        onUpdate() {
-          if (!countRef.current) return
-          countRef.current.textContent = c.metric.isDecimal
-            ? obj.v.toFixed(1)
-            : Math.round(obj.v).toString()
-        },
-      })
-      io.disconnect()
-    }, { threshold: 0.3 })
-    io.observe(el)
-    return () => io.disconnect()
-  }, [c.metric])
-
+// ── Card ──────────────────────────────────────────────────────────────────────
+function CaseCard({ c, featured, onOpen }: { c: Case; featured: boolean; onOpen: (c: Case, el: HTMLElement) => void }) {
+  const hasMetric = c.metric.value > 0
   return (
-    <div
-      ref={cardRef}
-      className="group relative h-full overflow-hidden rounded-2xl cursor-pointer bg-[#111111]"
-      style={{ transformStyle: 'preserve-3d' }}
-      onMouseMove={onMove}
-      onMouseLeave={onLeave}
+    <SpotlightCard
+      as="article"
+      tilt={featured ? 3 : 5}
+      glow="rgba(224,32,32,0.10)"
+      className="h-full rounded-[28px] bg-surface shadow-[var(--shadow-soft)] ring-1 ring-line transition-shadow duration-500 hover:shadow-[var(--shadow-lift)]"
     >
-      {/* Image */}
-      <div className="absolute inset-0">
-        <CaseImage
-          src={c.image}
-          alt={c.title}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-        />
-      </div>
-
-      {/* Default bottom strip */}
-      <div className="absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-t from-black/95 via-black/60 to-transparent pointer-events-none" />
-      <div className="absolute bottom-0 left-0 right-0 p-6 flex items-end justify-between gap-4">
-        <div>
-          <span className="block text-[#E02020] text-[10px] font-bold uppercase tracking-[0.35em] mb-1">
+      <div
+        data-cursor="Ver"
+        onPointerMove={trackCoverPointer}
+        onPointerLeave={resetCoverPointer}
+        className={cn('group/case relative flex h-full flex-col p-2', featured && 'lg:grid lg:grid-cols-12 lg:gap-2')}
+      >
+        <div className={cn('relative aspect-[16/10] overflow-hidden rounded-[22px] bg-paper-2', featured && 'lg:col-span-7 lg:aspect-auto lg:min-h-[440px]')}>
+          <CaseMedia
+            src={c.image}
+            alt={c.title}
+            category={c.category}
+            seed={c.id}
+            title={c.title}
+            zoom={featured ? 1.08 : 1}
+            sizes={featured ? '(min-width: 1024px) 60vw, 100vw' : '(min-width: 1024px) 50vw, 100vw'}
+          />
+          <span className="absolute left-3 top-3 inline-flex items-center gap-2 rounded-full bg-white/95 px-3 py-1.5 text-[0.78rem] font-semibold text-ink shadow-sm ring-1 ring-ink/5">
+            <span className="size-1.5 rounded-full" style={{ backgroundColor: CATEGORY_TINT[c.category] }} aria-hidden="true" />
             {c.category}
           </span>
-          <h3 className="text-white font-black text-xl leading-tight line-clamp-2">{c.title}</h3>
-          <p className="text-[#9898A4] text-xs mt-1">{c.client} · {c.year}</p>
         </div>
-        <MetricDisplay metric={c.metric} countRef={countRef} compact />
-      </div>
 
-      {/* Hover overlay */}
-      <div
-        className="absolute inset-0 bg-[#0A0A0A]/95 flex flex-col justify-end p-6 translate-y-full group-hover:translate-y-0"
-        style={{ transition: 'transform 0.5s cubic-bezier(0.16,1,0.3,1)' }}
-      >
-        <span className="text-[#E02020] text-[10px] font-bold uppercase tracking-[0.35em] mb-2">
-          {c.category} · {c.segment}
-        </span>
-        <h3 className="text-white font-black text-2xl leading-tight mb-1">{c.title}</h3>
-        <p className="text-[#C0C0C8] text-xs mb-3">{c.client} · {c.year}</p>
-        <p className="text-[#C0C0C8] text-sm leading-relaxed mb-5 line-clamp-3">{c.result}</p>
-        <div className="flex flex-wrap gap-1.5 mb-5">
-          {c.tags.map((tag) => (
-            <span key={tag} className="text-[10px] text-[#888892] border border-[#222222] px-2.5 py-0.5 rounded-full">
-              {tag}
+        <div className={cn('flex flex-1 flex-col px-4 pb-4 pt-5 md:px-6 md:pb-6', featured && 'lg:col-span-5 lg:justify-center lg:px-8 lg:py-8')}>
+          <div className="flex items-center justify-between gap-4 text-sm text-ink-3">
+            <span className="truncate">{c.segment}</span>
+            <span className="shrink-0 font-mono text-[0.8rem]">{c.year}</span>
+          </div>
+
+          <h3 className={cn('mt-3 text-ink [overflow-wrap:anywhere]', featured ? 'type-title' : 'type-card')}>
+            <button
+              type="button"
+              aria-haspopup="dialog"
+              onClick={(e) => onOpen(c, e.currentTarget)}
+              className="text-left outline-none after:absolute after:inset-0 after:z-10 after:rounded-[28px] focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-offset-[-3px] focus-visible:after:outline-red"
+            >
+              {c.title}
+            </button>
+          </h3>
+          <p className="mt-1 text-sm text-ink-3">{c.client}</p>
+
+          <p className={cn('mt-4 max-w-[52ch] leading-relaxed text-ink-2', featured ? 'line-clamp-4' : 'line-clamp-3')}>{c.result}</p>
+
+          <ul className="mt-5 flex flex-wrap gap-1.5" aria-label="Serviços do projeto">
+            {c.tags.map((tag) => (
+              <li key={tag} className="rounded-full bg-paper px-3 py-1 text-[0.78rem] font-medium text-ink-2 ring-1 ring-line">
+                {tag}
+              </li>
+            ))}
+          </ul>
+
+          <div className={cn('mt-auto flex items-end justify-between gap-4 pt-6', hasMetric && 'border-t border-line', featured && 'lg:mt-8')}>
+            {hasMetric ? <CaseMetric metric={c.metric} className="pt-5" /> : <span className="text-sm font-semibold text-ink">Ver detalhes</span>}
+            <span
+              aria-hidden="true"
+              className="grid size-11 shrink-0 place-items-center rounded-full bg-ink text-white transition-[background-color,transform] duration-500 ease-[var(--ease-out-expo)] group-hover/case:rotate-45 group-hover/case:bg-red"
+            >
+              <ArrowUpRight className="size-[18px]" strokeWidth={2.4} />
             </span>
-          ))}
+          </div>
         </div>
-        <MetricDisplay metric={c.metric} countRef={countRef} />
       </div>
-    </div>
+    </SpotlightCard>
   )
 }
 
-// ── Mobile card ───────────────────────────────────────────────────────────────
-function MobileCard({ c }: { c: Case }) {
-  const countRef = useRef<HTMLSpanElement | null>(null)
-  const didCount = useRef(false)
-
-  useEffect(() => {
-    const el = countRef.current
-    if (!el || c.metric.value === 0 || didCount.current) return
-    const io = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting || didCount.current) return
-      didCount.current = true
-      const obj = { v: 0 }
-      gsap.to(obj, {
-        v: c.metric.value,
-        duration: 1.8,
-        ease: 'power2.out',
-        onUpdate() {
-          if (!countRef.current) return
-          countRef.current.textContent = c.metric.isDecimal
-            ? obj.v.toFixed(1)
-            : Math.round(obj.v).toString()
-        },
-      })
-      io.disconnect()
-    }, { threshold: 0.4 })
-    io.observe(el)
-    return () => io.disconnect()
-  }, [c.metric])
-
+// ── Filtros (pílula deslizante) ───────────────────────────────────────────────
+function FilterTabs({ active, onChange }: { active: string; onChange: (f: string) => void }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-[#111111] flex flex-col">
-      <div className="aspect-video relative overflow-hidden">
-        <CaseImage
-          src={c.image}
-          alt={c.title}
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#111111]/80 to-transparent" />
-        <span className="absolute bottom-3 left-4 text-[#E02020] text-[10px] font-bold uppercase tracking-widest">
-          {c.category}
-        </span>
-      </div>
-      <div className="p-5 flex-1 flex flex-col">
-        <h3 className="text-white font-black text-xl leading-tight mb-0.5">{c.title}</h3>
-        <p className="text-[#767680] text-xs mb-1">{c.segment}</p>
-        <p className="text-[#767680] text-xs mb-3">{c.client} · {c.year}</p>
-        <p className="text-[#B2B2BC] text-sm leading-relaxed mb-5 flex-1">{c.result}</p>
-        <MetricDisplay metric={c.metric} countRef={countRef} />
-        <div className="flex flex-wrap gap-1.5 mt-3">
-          {c.tags.map((tag) => (
-            <span key={tag} className="text-[10px] text-[#888892] border border-[#222222] px-2 py-0.5 rounded-full">
-              {tag}
-            </span>
-          ))}
-        </div>
+    <div
+      role="group"
+      aria-label="Filtrar cases por categoria"
+      className="-mx-[var(--gutter)] min-w-0 overflow-x-auto px-[var(--gutter)] py-1 [scrollbar-width:none] md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden"
+    >
+      <div className="inline-flex min-w-max items-center gap-1 rounded-full bg-surface/90 p-1 shadow-[var(--shadow-soft)] ring-1 ring-line">
+        {FILTERS.map((f) => {
+          const on = active === f
+          const count = f === 'Todos' ? CASES.length : CASES.filter((c) => c.category === f).length
+          return (
+            <button
+              key={f}
+              type="button"
+              aria-pressed={on}
+              onClick={() => onChange(f)}
+              className={cn(
+                'relative flex h-11 items-center gap-1.5 rounded-full px-4 text-sm font-semibold transition-colors duration-300',
+                on ? 'text-white' : 'text-ink-2 hover:text-ink',
+              )}
+            >
+              {on && (
+                <motion.span
+                  layoutId="portfolio-filter-pill"
+                  className="absolute inset-0 rounded-full bg-ink"
+                  transition={{ type: 'spring', stiffness: 420, damping: 36 }}
+                />
+              )}
+              <span className="relative">{f}</span>
+              <span className={cn('relative font-mono text-[0.7rem]', on ? 'text-white/60' : 'text-ink-3')}>{count}</span>
+            </button>
+          )
+        })}
       </div>
     </div>
   )
@@ -318,113 +273,90 @@ function MobileCard({ c }: { c: Case }) {
 // ── Main export ───────────────────────────────────────────────────────────────
 export default function PortfolioGallery() {
   const [activeFilter, setActiveFilter] = useState<string>('Todos')
-  const [isAnimating, setIsAnimating]   = useState(false)
-  const gridRef                          = useRef<HTMLDivElement>(null)
-  const mobileGridRef                    = useRef<HTMLDivElement>(null)
+  const [selected, setSelected] = useState<Case | null>(null)
+  const triggerRef = useRef<HTMLElement | null>(null)
+  const gridRef = useRef<HTMLDivElement>(null)
+  const inView = useInView(gridRef, { once: true, margin: '0px 0px -10% 0px' })
 
-  const visible = CASES.filter(
-    (c) => activeFilter === 'Todos' || c.category === activeFilter,
+  const visible = useMemo(
+    () => CASES.filter((c) => activeFilter === 'Todos' || c.category === activeFilter),
+    [activeFilter],
   )
 
-  // Reveal animation after filter change
-  useEffect(() => {
-    const grids = [gridRef.current, mobileGridRef.current].filter(Boolean) as HTMLDivElement[]
-    grids.forEach((grid) => {
-      const cards = Array.from(grid.children) as HTMLElement[]
-      gsap.fromTo(
-        cards,
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.4, stagger: 0.07, ease: 'power2.out', clearProps: 'transform' },
-      )
-    })
-  }, [activeFilter])
-
-  const handleFilter = useCallback(
-    (category: string) => {
-      if (category === activeFilter || isAnimating) return
-      setIsAnimating(true)
-      const grids = [gridRef.current, mobileGridRef.current].filter(Boolean) as HTMLDivElement[]
-      const cards = grids.flatMap((g) => Array.from(g.children) as HTMLElement[])
-      if (cards.length > 0) {
-        gsap.to(cards, {
-          opacity: 0, y: 12, duration: 0.18, stagger: 0.02,
-          onComplete: () => { setActiveFilter(category); setIsAnimating(false) },
-        })
-      } else {
-        setActiveFilter(category)
-        setIsAnimating(false)
-      }
-    },
-    [activeFilter, isAnimating],
-  )
+  const open = useCallback((c: Case, el: HTMLElement) => {
+    triggerRef.current = el
+    setSelected(c)
+  }, [])
+  const close = useCallback(() => setSelected(null), [])
 
   return (
-    <section className="bg-[#0A0A0A] pb-16">
-      {/* Filter bar */}
-      <div className="sticky top-16 z-30 bg-[#0A0A0A]/90 backdrop-blur-md border-b border-[#161616]">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center gap-2 overflow-x-auto scrollbar-none">
-          {FILTERS.map((f) => {
-            const count   = f === 'Todos' ? CASES.length : CASES.filter((c) => c.category === f).length
-            const isActive = activeFilter === f
-            return (
-              <button
-                key={f}
-                onClick={() => handleFilter(f)}
-                className={`shrink-0 flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
-                  isActive
-                    ? 'bg-[#E02020] text-white shadow-[0_0_20px_rgba(224,32,32,0.3)]'
-                    : 'text-[#888892] hover:text-white border border-[#1E1E1E] hover:border-[#333333]'
-                }`}
-              >
-                {f}
-                <span className={`text-xs font-mono ${isActive ? 'text-white/70' : 'text-[#575760]'}`}>
-                  {count}
-                </span>
-              </button>
-            )
-          })}
-        </div>
-      </div>
+    <section aria-label="Cases" className="relative pb-24 md:pb-36">
+      <div className="container-gam">
+        <Reveal className="flex items-center justify-between gap-6">
+          <FilterTabs active={activeFilter} onChange={setActiveFilter} />
+          <p className="sr-only shrink-0 font-mono text-[0.8rem] text-ink-3 md:not-sr-only" aria-live="polite">
+            {String(visible.length).padStart(2, '0')} case{visible.length !== 1 ? 's' : ''}
+          </p>
+        </Reveal>
 
-      {/* DESKTOP bento grid — layout adapts to case count:
-          1 case  → full width
-          2 cases → 2 equal columns
-          3 cases → 1st full width + 2 half-width
-          4 cases → 2×2 symmetric grid                         */}
-      <div className="hidden lg:block max-w-7xl mx-auto px-6 pt-12">
-        <div ref={gridRef} className="grid gap-5" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
-          {visible.map((c, idx) => {
-            const total    = visible.length
-            // First card is full-width only when the total count is odd (3 cases → row of 1 then row of 2)
-            const spanFull = total === 1 || (idx === 0 && total % 2 !== 0)
-            return (
-              <div
-                key={c.id}
-                className={spanFull ? 'col-span-2' : ''}
-                style={{ height: spanFull ? '420px' : '500px' }}
-              >
-                <CaseCard c={c} />
-              </div>
-            )
-          })}
+        {/* Bento que se adapta à quantidade:
+            1 case  → largura total (horizontal no desktop)
+            2 cases → 2 colunas iguais
+            3 cases → 1º em destaque + 2 lado a lado
+            4 cases → grade 2×2 simétrica                                  */}
+        {/* Troca de filtro em crossfade (sem animação de layout): o card em
+            destaque muda de formato e escalar o conteúdo causaria distorção. */}
+        <div ref={gridRef} className="mt-8">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={activeFilter}
+              className="grid gap-4 md:gap-5 lg:grid-cols-2"
+              initial="hidden"
+              animate={inView ? 'show' : 'hidden'}
+              exit={{ opacity: 0, transition: { duration: 0.18, ease: 'easeOut' } }}
+              variants={{ hidden: {}, show: { transition: { staggerChildren: 0.08 } } }}
+            >
+              {visible.map((c, idx) => {
+                const total = visible.length
+                const featured = total === 1 || (idx === 0 && total % 2 !== 0)
+                return (
+                  <motion.div
+                    key={c.id}
+                    className={cn(featured && 'lg:col-span-2')}
+                    variants={{
+                      hidden: { opacity: 0, y: 28 },
+                      show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: EASE } },
+                    }}
+                  >
+                    <CaseCard c={c} featured={featured} onOpen={open} />
+                  </motion.div>
+                )
+              })}
+            </motion.div>
+          </AnimatePresence>
         </div>
 
-        <p className="mt-8 text-[#575760] text-xs font-mono text-right">
-          {visible.length} case{visible.length !== 1 ? 's' : ''}
-        </p>
+        {/* Fechamento (a página usa <Footer cta={false} />, então o CTA final é este) */}
+        <Reveal className="relative isolate mt-16 overflow-hidden rounded-[28px] bg-red p-7 text-white shadow-[var(--shadow-red)] md:mt-24 md:rounded-[36px] md:p-14">
+          <div aria-hidden="true" className="bg-dot-grid-light pointer-events-none absolute inset-0 -z-10 opacity-60 [mask-image:linear-gradient(to_left,#000,transparent_65%)]" />
+          <div className="grid items-end gap-8 md:grid-cols-[1fr_auto] md:gap-12">
+            <div>
+              <Kicker tone="red" className="mb-6">Próximo case</Kicker>
+              <p className="font-display text-[clamp(2.2rem,5vw,4.25rem)] font-extrabold leading-[0.95] tracking-[-0.035em]">
+                Seu projeto pode ser o próximo.
+              </p>
+              <p className="mt-5 max-w-[50ch] text-white/85 md:text-lg">
+                Conte o seu objetivo e montamos um plano com metas claras, do primeiro contato até o resultado.
+              </p>
+            </div>
+            <Button href={WA_URL} variant="white" icon="whatsapp" size="lg" className="w-full justify-between sm:w-auto">
+              Faça seu orçamento
+            </Button>
+          </div>
+        </Reveal>
       </div>
 
-      {/* MOBILE stacked */}
-      <div className="block lg:hidden px-4 sm:px-6 pt-8">
-        <div ref={mobileGridRef} className="grid gap-5 sm:grid-cols-2">
-          {visible.map((c) => (
-            <MobileCard key={c.id} c={c} />
-          ))}
-        </div>
-        <p className="mt-8 text-[#575760] text-xs font-mono text-center">
-          {visible.length} case{visible.length !== 1 ? 's' : ''}
-        </p>
-      </div>
+      <CaseDialog item={selected} onClose={close} returnFocusRef={triggerRef} />
     </section>
   )
 }

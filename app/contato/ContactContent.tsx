@@ -1,448 +1,338 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
-import gsap from 'gsap'
-import Magnetic from '@/components/Magnetic'
+import { useId, useState, useSyncExternalStore, type ReactNode } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { ArrowUpRight, Clock3, MapPin, Plus } from 'lucide-react'
+import Button, { InstagramIcon, WhatsAppIcon } from '@/components/system/Button'
+import SpotlightCard from '@/components/system/SpotlightCard'
+import { Kicker } from '@/components/system/SectionHeading'
+import { Reveal, RevealText } from '@/components/system/Reveal'
+import ContactForm from '@/components/ContactForm'
+import { COUNTRIES, FOUNDED_YEAR, INSTAGRAM_HANDLE, INSTAGRAM_URL, SERVICES, WA_URL, WHATSAPP_DISPLAY } from '@/lib/site'
+import { cn } from '@/lib/utils'
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-const WA_URL =
-  'https://api.whatsapp.com/send/?phone=5562992589599&text=Ol%C3%A1%2C+vim+pelo+site+e+gostaria+de+fazer+um+or%C3%A7amento!'
-const IG_URL = 'https://instagram.com/gamstudio.br'
+const EASE = [0.16, 1, 0.3, 1] as const
 
-const SERVICES = [
-  'Criação de Sites',
-  'Consultoria em SEO',
-  'Agentes IA',
-  'Google ADS',
-  'Landing Pages',
-  'Publicidade',
-  'Redes Sociais',
-  'Produção de Conteúdo',
-  'Branding',
-  'Mídia',
-  'Eventos',
-  'Consultoria Completa',
-]
-
-const INFO_ITEMS = [
+const FAQ = [
   {
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-        <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.553 4.116 1.522 5.847L.057 23.882a.5.5 0 0 0 .612.612l6.035-1.465A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.8 9.8 0 0 1-5.003-1.369l-.359-.214-3.72.903.919-3.638-.234-.374A9.818 9.818 0 0 1 2.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/>
-      </svg>
-    ),
-    label: 'WhatsApp',
-    value: '(62) 99258-9599',
-    href: WA_URL,
+    q: 'Em quanto tempo vocês respondem?',
+    a: 'Respondemos em até 24 horas úteis pelo canal que você escolher. Se for algo urgente, o WhatsApp é o caminho mais rápido.',
   },
   {
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-        <circle cx="12" cy="12" r="4"/>
-        <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/>
-      </svg>
-    ),
-    label: 'Instagram',
-    value: '@gamstudio.br',
-    href: IG_URL,
+    q: 'Vocês atendem fora de Goiânia?',
+    a: `Sim. Nascemos em Goiânia em ${FOUNDED_YEAR} e hoje atendemos clientes em todo o Brasil, nos Estados Unidos e na Europa, com todo o acompanhamento feito online.`,
   },
   {
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-        <circle cx="12" cy="10" r="3"/>
-      </svg>
-    ),
-    label: 'Localização',
-    value: 'Goiânia — GO, Brasil',
-    href: null,
+    q: 'Quais serviços a GAM Studio oferece?',
+    a: `Trabalhamos com ${SERVICES.length} frentes integradas: ${SERVICES.map((s) => s.name).join(', ')}. Você pode começar por uma delas ou combinar várias.`,
   },
   {
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <circle cx="12" cy="12" r="10"/>
-        <polyline points="12 6 12 12 16 14"/>
-      </svg>
-    ),
-    label: 'Horário',
-    value: 'Seg–Sex: 8h às 18h (BRT)',
-    href: null,
+    q: 'Qual é o horário de atendimento?',
+    a: 'De segunda a sexta, das 8h às 18h (horário de Brasília). Mensagens enviadas fora desse horário são respondidas no próximo dia útil.',
+  },
+  {
+    q: 'Preciso saber exatamente o que quero antes de chamar?',
+    a: 'Não. Conte seu objetivo e o momento do seu negócio — a gente ajuda a desenhar o melhor caminho a partir daí.',
   },
 ]
 
-// ── Form field wrapper ─────────────────────────────────────────────────────────
-function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+// ─── Status "aberto agora" (horário de Brasília, seg–sex 8h–18h) ─────────────
+function isOpenNow() {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Sao_Paulo',
+    weekday: 'short',
+    hour: 'numeric',
+    hourCycle: 'h23',
+  }).formatToParts(new Date())
+  const day = parts.find((p) => p.type === 'weekday')?.value ?? ''
+  const hour = Number(parts.find((p) => p.type === 'hour')?.value ?? 0)
+  return !['Sat', 'Sun'].includes(day) && hour >= 8 && hour < 18
+}
+const subscribeMinute = (cb: () => void) => {
+  const t = window.setInterval(cb, 60_000)
+  return () => window.clearInterval(t)
+}
+function useOpenNow(): boolean | null {
+  return useSyncExternalStore(subscribeMinute, isOpenNow, () => null)
+}
+
+// ─── Página ───────────────────────────────────────────────────────────────────
+export default function ContactContent() {
   return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-[#B2B2BC] text-xs font-semibold uppercase tracking-[0.2em]">
-        {label}
-      </label>
-      {children}
-      {error && <p className="text-[#E02020] text-xs mt-0.5">{error}</p>}
-    </div>
+    <>
+      <section aria-label="Canais de contato e formulário" className="relative pb-24 md:pb-32">
+        <div className="container-gam grid gap-6 lg:grid-cols-12 lg:gap-8 xl:gap-10">
+          {/* ── Canais ── */}
+          <div className="flex flex-col gap-4 lg:sticky lg:top-28 lg:col-span-5 lg:self-start">
+            <Reveal>
+              <WhatsAppCard />
+            </Reveal>
+            <Reveal delay={0.08}>
+              <InstagramCard />
+            </Reveal>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Reveal delay={0.16} className="h-full">
+                <LocationCard />
+              </Reveal>
+              <Reveal delay={0.24} className="h-full">
+                <HoursCard />
+              </Reveal>
+            </div>
+          </div>
+
+          {/* ── Formulário ── */}
+          <Reveal delay={0.12} y={40} className="lg:col-span-7">
+            <div id="formulario" className="scroll-mt-28 rounded-[28px] bg-surface p-6 shadow-[var(--shadow-lift)] ring-1 ring-line/60 sm:p-8 md:p-10">
+              <Kicker className="mb-5">Formulário de contato</Kicker>
+              <h2 className="type-title max-w-[18ch] text-ink">
+                Conte sobre seu projeto<span className="gam-dot">.</span>
+              </h2>
+              <p className="mt-3 max-w-[48ch] text-ink-2">
+                Quanto mais contexto você der, mais certeira é a nossa resposta. Todos os campos são obrigatórios.
+              </p>
+              <div className="mt-8 border-t border-line pt-8">
+                <ContactForm />
+              </div>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      <FaqSection />
+    </>
   )
 }
 
-// ── Shared input classes ───────────────────────────────────────────────────────
-const INPUT_BASE =
-  'w-full bg-[#0F0F0F] border border-[#1E1E1E] text-white placeholder-[#333333] rounded-xl px-4 py-3.5 text-sm outline-none transition-all duration-200 focus:border-[#E02020] focus:shadow-[0_0_0_3px_rgba(224,32,32,0.12)] hover:border-[#2A2A2A]'
-
-// ── Main export ───────────────────────────────────────────────────────────────
-export default function ContactContent() {
-  const rootRef    = useRef<HTMLDivElement>(null)
-  const formColRef = useRef<HTMLDivElement>(null)
-  const infoColRef = useRef<HTMLDivElement>(null)
-
-  // ── Form state ──────────────────────────────────────────────────────────
-  const [fields, setFields] = useState({
-    name: '', email: '', phone: '', company: '', service: '', message: '',
-  })
-  const [errors, setErrors]   = useState<Partial<typeof fields>>({})
-  const [status, setStatus]   = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
-
-  const update = useCallback((k: keyof typeof fields) => (
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-      setFields((prev) => ({ ...prev, [k]: e.target.value }))
-      setErrors((prev) => ({ ...prev, [k]: '' }))
-    }
-  ), [])
-
-  function validate() {
-    const e: Partial<typeof fields> = {}
-    if (!fields.name.trim())    e.name    = 'Informe seu nome'
-    if (!fields.email.trim())   e.email   = 'Informe seu e-mail'
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email)) e.email = 'E-mail inválido'
-    if (!fields.message.trim()) e.message = 'Escreva sua mensagem'
-    setErrors(e)
-    return Object.keys(e).length === 0
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!validate()) return
-    setStatus('sending')
-
-    try {
-      const res = await fetch('https://api.web3forms.com/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({
-          access_key: '318470fc-e955-44fd-99f1-8fe61f0c6d34',
-          subject: `Novo contato: ${fields.name}${fields.service ? ` — ${fields.service}` : ''}`,
-          from_name: 'GAM Studio — Site',
-          name: fields.name,
-          email: fields.email,
-          phone: fields.phone,
-          company: fields.company,
-          service: fields.service || 'Não informado',
-          message: fields.message,
-        }),
-      })
-      const data = await res.json()
-      setStatus(data.success ? 'success' : 'error')
-    } catch {
-      setStatus('error')
-    }
-  }
-
-  // ── Entrance animation ──────────────────────────────────────────────────
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      const mm = gsap.matchMedia()
-
-      mm.add('(prefers-reduced-motion: no-preference)', () => {
-        const formEls = formColRef.current?.querySelectorAll('[data-enter]')
-        const infoEls = infoColRef.current?.querySelectorAll('[data-enter]')
-
-        if (formEls?.length) {
-          gsap.fromTo(
-            formEls,
-            { opacity: 0, y: 32 },
-            { opacity: 1, y: 0, duration: 0.65, stagger: 0.07, ease: 'power3.out', delay: 0.1 },
-          )
-        }
-        if (infoEls?.length) {
-          gsap.fromTo(
-            infoEls,
-            { opacity: 0, y: 24 },
-            { opacity: 1, y: 0, duration: 0.55, stagger: 0.06, ease: 'power3.out', delay: 0.35 },
-          )
-        }
-        return () => {}
-      })
-    }, rootRef)
-
-    return () => ctx.revert()
-  }, [])
-
-  // ── Render ──────────────────────────────────────────────────────────────
+// ─── Cards de canal ───────────────────────────────────────────────────────────
+function WhatsAppCard() {
   return (
-    <section ref={rootRef} className="bg-[#0A0A0A] py-16 lg:py-24">
-      <div className="max-w-7xl mx-auto px-6 lg:px-12">
-
-        <div className="lg:grid lg:grid-cols-[1fr_420px] xl:grid-cols-[1fr_480px] lg:gap-20 xl:gap-28">
-
-          {/* ── LEFT: Form ── */}
-          <div ref={formColRef}>
-            <p data-enter className="text-[#E02020] text-xs font-bold uppercase tracking-[0.4em] mb-8">
-              Formulário de contato
-            </p>
-
-            {status === 'success' ? (
-              /* ── Success state ── */
-              <div className="flex flex-col items-start gap-6 py-12">
-                <div className="w-14 h-14 rounded-full bg-[#E02020]/10 border border-[#E02020]/30 flex items-center justify-center">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#E02020" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-2xl font-black text-white mb-2">Mensagem enviada!</h3>
-                  <p className="text-[#9898A4] text-base leading-relaxed max-w-md">
-                    Recebemos seu contato e retornaremos em até 24 horas. Se preferir uma resposta mais rápida, fale direto pelo WhatsApp.
-                  </p>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-3 mt-2">
-                  <button
-                    onClick={() => { setStatus('idle'); setFields({ name: '', email: '', phone: '', company: '', service: '', message: '' }) }}
-                    className="px-6 py-3 border border-[#1E1E1E] text-[#B2B2BC] hover:text-white hover:border-[#333333] text-sm font-semibold rounded-xl transition-colors"
-                  >
-                    Enviar outro
-                  </button>
-                  <a
-                    href={WA_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-6 py-3 bg-[#E02020] text-white text-sm font-semibold rounded-xl hover:bg-[#C01010] transition-colors text-center"
-                  >
-                    Falar no WhatsApp
-                  </a>
-                </div>
-              </div>
-            ) : (
-              /* ── Form ── */
-              <form onSubmit={handleSubmit} noValidate className="space-y-5">
-
-                {/* Row 1: nome + email */}
-                <div data-enter className="grid sm:grid-cols-2 gap-5">
-                  <Field label="Nome *" error={errors.name}>
-                    <input
-                      type="text"
-                      value={fields.name}
-                      onChange={update('name')}
-                      placeholder="Seu nome"
-                      autoComplete="name"
-                      className={`${INPUT_BASE} ${errors.name ? 'border-[#E02020]/60' : ''}`}
-                    />
-                  </Field>
-                  <Field label="E-mail *" error={errors.email}>
-                    <input
-                      type="email"
-                      value={fields.email}
-                      onChange={update('email')}
-                      placeholder="seu@email.com"
-                      autoComplete="email"
-                      className={`${INPUT_BASE} ${errors.email ? 'border-[#E02020]/60' : ''}`}
-                    />
-                  </Field>
-                </div>
-
-                {/* Row 2: whatsapp + empresa */}
-                <div data-enter className="grid sm:grid-cols-2 gap-5">
-                  <Field label="WhatsApp">
-                    <input
-                      type="tel"
-                      value={fields.phone}
-                      onChange={update('phone')}
-                      placeholder="(00) 00000-0000"
-                      autoComplete="tel"
-                      className={INPUT_BASE}
-                    />
-                  </Field>
-                  <Field label="Empresa">
-                    <input
-                      type="text"
-                      value={fields.company}
-                      onChange={update('company')}
-                      placeholder="Nome da empresa"
-                      autoComplete="organization"
-                      className={INPUT_BASE}
-                    />
-                  </Field>
-                </div>
-
-                {/* Serviço */}
-                <div data-enter>
-                  <Field label="Serviço de interesse">
-                    <select
-                      value={fields.service}
-                      onChange={update('service')}
-                      className={`${INPUT_BASE} appearance-none cursor-pointer`}
-                      style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23555555' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center' }}
-                    >
-                      <option value="">Selecione um serviço</option>
-                      {SERVICES.map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
-                    </select>
-                  </Field>
-                </div>
-
-                {/* Mensagem */}
-                <div data-enter>
-                  <Field label="Mensagem *" error={errors.message}>
-                    <textarea
-                      rows={5}
-                      value={fields.message}
-                      onChange={update('message')}
-                      placeholder="Conte um pouco sobre o seu projeto, objetivo ou dúvida..."
-                      className={`${INPUT_BASE} resize-none ${errors.message ? 'border-[#E02020]/60' : ''}`}
-                    />
-                  </Field>
-                </div>
-
-                {/* Submit */}
-                <div data-enter className="pt-2">
-                  <button
-                    type="submit"
-                    disabled={status === 'sending'}
-                    className="w-full sm:w-auto flex items-center justify-center gap-3 px-10 py-4 bg-[#E02020] text-white font-black text-sm rounded-xl hover:bg-[#C01010] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200"
-                    style={{ boxShadow: '0 0 28px rgba(224,32,32,0.30)' }}
-                  >
-                    {status === 'sending' ? (
-                      <>
-                        <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
-                          <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
-                        </svg>
-                        Enviando…
-                      </>
-                    ) : (
-                      <>
-                        Enviar mensagem
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <line x1="5" y1="12" x2="19" y2="12"/>
-                          <polyline points="12 5 19 12 12 19"/>
-                        </svg>
-                      </>
-                    )}
-                  </button>
-
-                  {status === 'error' && (
-                    <p className="mt-3 text-[#E02020] text-xs">
-                      Algo deu errado. Tente novamente ou entre em contato pelo WhatsApp.
-                    </p>
-                  )}
-
-                  <p className="mt-4 text-[#575760] text-xs">
-                    Respondemos em até 24h úteis. Seus dados não são compartilhados.
-                  </p>
-                </div>
-              </form>
-            )}
-          </div>
-
-          {/* ── RIGHT: Info column ── */}
-          <div ref={infoColRef} className="mt-16 lg:mt-0 flex flex-col gap-10">
-
-            {/* CTA direct buttons */}
-            <div data-enter className="flex flex-col gap-3">
-              <p className="text-[#575760] text-xs uppercase tracking-[0.3em] font-bold mb-1">
-                Prefere falar agora?
-              </p>
-
-              <Magnetic strength={0.2}>
-                <a
-                  href={WA_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 w-full px-5 py-4 bg-[#E02020] text-white font-bold text-sm rounded-xl hover:bg-[#C01010] transition-colors"
-                  style={{ boxShadow: '0 4px 24px rgba(224,32,32,0.25)' }}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-                    <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.553 4.116 1.522 5.847L.057 23.882a.5.5 0 0 0 .612.612l6.035-1.465A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.8 9.8 0 0 1-5.003-1.369l-.359-.214-3.72.903.919-3.638-.234-.374A9.818 9.818 0 0 1 2.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/>
-                  </svg>
-                  <span>Chamar no WhatsApp</span>
-                  <span className="ml-auto text-white/50 text-xs font-normal">(62) 99258-9599</span>
-                </a>
-              </Magnetic>
-
-              <Magnetic strength={0.2}>
-                <a
-                  href={IG_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 w-full px-5 py-4 border border-[#222222] text-[#C0C0C8] font-bold text-sm rounded-xl hover:border-[#444444] hover:text-white transition-all"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-                    <circle cx="12" cy="12" r="4"/>
-                    <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/>
-                  </svg>
-                  <span>Seguir no Instagram</span>
-                  <span className="ml-auto text-[#888892] text-xs font-normal">@gamstudio.br</span>
-                </a>
-              </Magnetic>
-            </div>
-
-            {/* Divider */}
-            <div data-enter className="border-t border-[#161616]" />
-
-            {/* Info list */}
-            <div data-enter className="space-y-6">
-              <p className="text-[#575760] text-xs uppercase tracking-[0.3em] font-bold">
-                Informações
-              </p>
-              {INFO_ITEMS.map((item) => (
-                <div key={item.label} className="flex items-start gap-4">
-                  <div className="w-9 h-9 rounded-lg bg-[#111111] border border-[#1E1E1E] flex items-center justify-center text-[#E02020] shrink-0 mt-0.5">
-                    {item.icon}
-                  </div>
-                  <div>
-                    <p className="text-[#767680] text-xs uppercase tracking-wider mb-0.5">{item.label}</p>
-                    {item.href ? (
-                      <a
-                        href={item.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-white text-sm font-semibold hover:text-[#E02020] transition-colors"
-                      >
-                        {item.value}
-                      </a>
-                    ) : (
-                      <p className="text-white text-sm font-semibold">{item.value}</p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Divider */}
-            <div data-enter className="border-t border-[#161616]" />
-
-            {/* Mapa embed */}
-            <div data-enter>
-              <p className="text-[#575760] text-xs uppercase tracking-[0.3em] font-bold mb-4">
-                Onde estamos
-              </p>
-              <div className="rounded-2xl overflow-hidden border border-[#1E1E1E]" style={{ height: 220 }}>
-                <iframe
-                  title="GAM Studio — Goiânia, GO"
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d247.65!2d-49.25309!3d-16.68637!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x935ef1b8a62ff167%3A0xa2e20b36cbafb5de!2sGoiânia%2C%20GO!5e0!3m2!1spt-BR!2sbr!4v1700000000000"
-                  width="100%"
-                  height="220"
-                  style={{ border: 0, filter: 'grayscale(1) invert(0.92) contrast(0.85)' }}
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
-              </div>
-            </div>
-          </div>
+    <SpotlightCard
+      as="article"
+      tilt={4}
+      glow="rgba(255,255,255,0.22)"
+      className="rounded-[28px] bg-red text-white shadow-[var(--shadow-red)]"
+    >
+      <a
+        href={WA_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        data-cursor="Chamar"
+        className="group/wa relative block p-7 focus-visible:outline-offset-[-6px] md:p-8"
+      >
+        <WhatsAppIcon className="pointer-events-none absolute -bottom-10 -right-8 size-52 rotate-[-14deg] text-white/[0.08] transition-transform duration-700 ease-[var(--ease-out-expo)] group-hover/wa:rotate-[-4deg] group-hover/wa:scale-105" />
+        <div className="relative flex items-start justify-between gap-4">
+          <span className="grid size-12 place-items-center rounded-2xl bg-white text-red">
+            <WhatsAppIcon className="size-6" />
+          </span>
+          <span className="inline-flex h-8 items-center gap-2 rounded-full bg-white/15 px-3 text-[0.8125rem] font-semibold ring-1 ring-inset ring-white/25">
+            <span className="relative flex size-1.5" aria-hidden="true">
+              <span className="absolute inset-0 animate-ping rounded-full bg-white/80 motion-reduce:animate-none" />
+              <span className="relative size-1.5 rounded-full bg-white" />
+            </span>
+            Canal mais rápido
+          </span>
         </div>
+        <p className="type-label relative mt-10 text-white/80">WhatsApp</p>
+        <p className="relative mt-1 font-display text-[clamp(1.9rem,3.2vw,2.6rem)] font-bold leading-none tracking-[-0.035em]">
+          {WHATSAPP_DISPLAY}
+        </p>
+        <p className="relative mt-4 max-w-[34ch] text-white/85">
+          Fale direto com a equipe para tirar dúvidas ou pedir seu orçamento.
+        </p>
+        <span className="relative mt-8 inline-flex items-center gap-3 font-semibold">
+          Chamar agora
+          <span className="grid size-9 place-items-center rounded-full bg-white text-red transition-transform duration-500 ease-[var(--ease-out-expo)] group-hover/wa:rotate-45">
+            <ArrowUpRight className="size-4" strokeWidth={2.4} aria-hidden="true" />
+          </span>
+        </span>
+      </a>
+    </SpotlightCard>
+  )
+}
+
+function InstagramCard() {
+  return (
+    <SpotlightCard as="article" tilt={4} className="rounded-[28px] bg-surface/90 ring-1 ring-line">
+      <a
+        href={INSTAGRAM_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        data-cursor="Seguir"
+        className="group/ig flex items-center gap-5 p-6 focus-visible:outline-offset-[-6px] md:p-7"
+      >
+        <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-ink text-white transition-colors duration-300 group-hover/ig:bg-red">
+          <InstagramIcon className="size-[22px]" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="type-label block text-ink-3">Instagram</span>
+          <span className="type-card block truncate text-ink">{INSTAGRAM_HANDLE}</span>
+          <span className="mt-0.5 block text-sm text-ink-2">Bastidores e projetos recentes.</span>
+        </span>
+        <span className="grid size-10 shrink-0 place-items-center rounded-full ring-1 ring-inset ring-line-2 transition-[transform,background-color,color,box-shadow] duration-500 ease-[var(--ease-out-expo)] group-hover/ig:rotate-45 group-hover/ig:bg-ink group-hover/ig:text-white group-hover/ig:ring-ink">
+          <ArrowUpRight className="size-4" strokeWidth={2.4} aria-hidden="true" />
+        </span>
+      </a>
+    </SpotlightCard>
+  )
+}
+
+function InfoCard({ icon, label, children, visual }: { icon: ReactNode; label: string; children: ReactNode; visual?: ReactNode }) {
+  return (
+    <SpotlightCard
+      as="article"
+      className="flex h-full flex-col rounded-[20px] bg-surface/90 p-6 ring-1 ring-line"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <span className="grid size-10 place-items-center rounded-xl bg-red-50 text-red">{icon}</span>
+        {visual}
+      </div>
+      <p className="type-label mt-6 text-ink-3">{label}</p>
+      <div className="mt-1">{children}</div>
+    </SpotlightCard>
+  )
+}
+
+function LocationCard() {
+  return (
+    <InfoCard
+      icon={<MapPin className="size-[18px]" strokeWidth={2.2} aria-hidden="true" />}
+      label="Localização"
+      visual={<Radar />}
+    >
+      <p className="font-display text-lg font-semibold leading-snug tracking-[-0.02em] text-ink">Goiânia — GO, Brasil</p>
+      <p className="mt-2 text-sm leading-relaxed text-ink-2">
+        Atendemos {COUNTRIES[0]}, {COUNTRIES[1].replace('Estados Unidos', 'EUA')} e {COUNTRIES[2]}.
+      </p>
+    </InfoCard>
+  )
+}
+
+function HoursCard() {
+  const open = useOpenNow()
+  return (
+    <InfoCard icon={<Clock3 className="size-[18px]" strokeWidth={2.2} aria-hidden="true" />} label="Horário">
+      <p className="font-display text-lg font-semibold leading-snug tracking-[-0.02em] text-ink">Seg a sex, 8h às 18h</p>
+      <p className="mt-2 text-sm leading-relaxed text-ink-2">Horário de Brasília. Respondemos em até 24h úteis.</p>
+      {/* No servidor (e na hidratação) `open` é null → chip neutro; o status real só aparece no cliente. */}
+      <p
+        className={cn(
+          'mt-4 inline-flex h-7 w-fit items-center gap-2 rounded-full px-2.5 text-xs font-semibold transition-colors duration-500',
+          open ? 'bg-emerald-50 text-emerald-700' : 'bg-paper-2 text-ink-2',
+        )}
+      >
+        <span
+          className={cn('size-1.5 rounded-full transition-colors duration-500', open ? 'bg-emerald-500' : 'bg-ink-3')}
+          aria-hidden="true"
+        />
+        {open === null ? 'Verificando horário' : open ? 'Aberto agora' : 'Fora do horário agora'}
+      </p>
+    </InfoCard>
+  )
+}
+
+/** Mini radar: anéis concêntricos com pulso no ponto de Goiânia. */
+function Radar() {
+  return (
+    <span className="relative grid size-12 place-items-center" aria-hidden="true">
+      <span className="absolute inset-0 rounded-full ring-1 ring-line" />
+      <span className="absolute inset-[9px] rounded-full ring-1 ring-line" />
+      <span className="absolute inset-0 animate-ping rounded-full bg-red/10 [animation-duration:2.4s] motion-reduce:animate-none" />
+      <span className="relative size-2 rounded-full bg-red shadow-[0_0_0_4px_rgba(224,32,32,0.15)]" />
+    </span>
+  )
+}
+
+// ─── FAQ ──────────────────────────────────────────────────────────────────────
+function FaqSection() {
+  const [open, setOpen] = useState<number | null>(0)
+  const baseId = useId()
+
+  return (
+    <section aria-label="Perguntas frequentes" className="relative pb-24 md:pb-36">
+      <div className="container-gam grid gap-10 lg:grid-cols-12 lg:gap-10">
+        <div className="lg:sticky lg:top-28 lg:col-span-4 lg:self-start">
+          <Kicker className="mb-6">Dúvidas frequentes</Kicker>
+          <RevealText
+            as="h2"
+            lines={['Antes de', 'você perguntar']}
+            dot
+            className="font-display text-[clamp(2.3rem,3.6vw,3.5rem)] font-extrabold leading-[0.96] tracking-[-0.035em] text-ink"
+          />
+          <Reveal delay={0.2}>
+            <p className="mt-6 max-w-[36ch] text-ink-2">
+              Não encontrou o que procurava? Mande sua pergunta no WhatsApp e a gente responde.
+            </p>
+            <div className="mt-7">
+              <Button href={WA_URL} variant="outline" icon="whatsapp">
+                Perguntar no WhatsApp
+              </Button>
+            </div>
+          </Reveal>
+        </div>
+
+        <ul className="flex flex-col gap-3 lg:col-span-8">
+          {FAQ.map((item, i) => {
+            const isOpen = open === i
+            const btnId = `${baseId}-q${i}`
+            const panelId = `${baseId}-a${i}`
+            return (
+              <Reveal as="li" key={item.q} delay={i * 0.06}>
+                <div
+                  className={cn(
+                    'rounded-[20px] ring-1 ring-inset transition-[background-color,box-shadow] duration-500',
+                    isOpen ? 'bg-surface shadow-[var(--shadow-soft)] ring-line-2' : 'bg-surface/75 ring-line hover:bg-surface/95',
+                  )}
+                >
+                  <h3 className="font-sans">
+                    <button
+                      id={btnId}
+                      type="button"
+                      aria-expanded={isOpen}
+                      aria-controls={panelId}
+                      onClick={() => setOpen(isOpen ? null : i)}
+                      className="group/q flex w-full items-center gap-4 rounded-[20px] px-5 py-5 text-left focus-visible:outline-offset-[-3px] md:gap-6 md:px-7 md:py-6"
+                    >
+                      <span className="hidden font-mono text-xs tabular-nums text-ink-3 sm:block">
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
+                      <span className="flex-1 font-display text-[1.0625rem] font-semibold leading-snug tracking-[-0.015em] text-ink md:text-xl">
+                        {item.q}
+                      </span>
+                      <span
+                        className={cn(
+                          'grid size-10 shrink-0 place-items-center rounded-full transition-[transform,background-color,color,box-shadow] duration-500 ease-[var(--ease-out-expo)]',
+                          isOpen
+                            ? 'rotate-45 bg-red text-white'
+                            : 'text-ink ring-1 ring-inset ring-line-2 group-hover/q:ring-ink',
+                        )}
+                      >
+                        <Plus className="size-4" strokeWidth={2.4} aria-hidden="true" />
+                      </span>
+                    </button>
+                  </h3>
+                  <AnimatePresence initial={false}>
+                    {isOpen && (
+                      <motion.div
+                        id={panelId}
+                        role="region"
+                        aria-labelledby={btnId}
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.5, ease: EASE }}
+                        className="overflow-hidden"
+                      >
+                        <p className="max-w-[62ch] px-5 pb-6 text-ink-2 sm:pl-[3.75rem] md:pb-7 md:pl-[4.6rem] md:pr-20">
+                          {item.a}
+                        </p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </Reveal>
+            )
+          })}
+        </ul>
       </div>
     </section>
   )

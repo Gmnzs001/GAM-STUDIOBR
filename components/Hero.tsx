@@ -1,258 +1,217 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { motion, useInView } from 'framer-motion'
+import { AnimatePresence, motion, useInView, useReducedMotion } from 'framer-motion'
+import { useRevealed } from '@/lib/intro'
+import { getLenis } from '@/lib/lenis-ref'
+import { FOUNDED_YEAR, STATS, WA_URL } from '@/lib/site'
+import { Reveal, RevealText } from '@/components/system/Reveal'
+import Button from '@/components/system/Button'
+import CountUp from '@/components/system/CountUp'
+import Globe from '@/components/Globe'
+import { cn } from '@/lib/utils'
 
-// ── Wave canvas (from GlowyWavesHero) ─────────────────────────────────────────
-type Wave = { offset: number; amplitude: number; frequency: number; color: string; opacity: number }
+const EASE = [0.16, 1, 0.3, 1] as const
+const WORDS = ['presença', 'estrutura', 'previsibilidade'] as const
+const CYCLE_MS = 2800
 
-const WAVES: Wave[] = [
-  { offset: 0,              amplitude: 70, frequency: 0.003,  color: 'rgba(224,32,32,0.8)',    opacity: 0.45 },
-  { offset: Math.PI / 2,   amplitude: 90, frequency: 0.0026, color: 'rgba(224,32,32,0.6)',    opacity: 0.35 },
-  { offset: Math.PI,        amplitude: 60, frequency: 0.0034, color: 'rgba(255,100,100,0.5)',  opacity: 0.30 },
-  { offset: Math.PI * 1.5, amplitude: 80, frequency: 0.0022, color: 'rgba(255,255,255,0.2)',  opacity: 0.25 },
-  { offset: Math.PI * 2,   amplitude: 55, frequency: 0.004,  color: 'rgba(255,255,255,0.15)', opacity: 0.20 },
-]
-
-function WaveCanvas() {
-  const ref = useRef<HTMLCanvasElement>(null)
-
-  useEffect(() => {
-    const canvas = ref.current!
-    const ctx = canvas.getContext('2d')!
-    let id: number, t = 0
-    const mouse = { x: 0, y: 0 }
-    const aim   = { x: 0, y: 0 }
-
-    const resize = () => {
-      canvas.width  = window.innerWidth
-      canvas.height = window.innerHeight
-      mouse.x = aim.x = canvas.width  / 2
-      mouse.y = aim.y = canvas.height / 2
-    }
-    resize()
-
-    const onMove  = (e: MouseEvent) => { aim.x = e.clientX; aim.y = e.clientY }
-    const onLeave = () => { aim.x = canvas.width / 2; aim.y = canvas.height / 2 }
-    window.addEventListener('resize',      resize)
-    window.addEventListener('mousemove',   onMove)
-    window.addEventListener('mouseleave',  onLeave)
-
-    const drawWave = (w: Wave) => {
-      ctx.save(); ctx.beginPath()
-      for (let x = 0; x <= canvas.width; x += 4) {
-        const dx   = x - mouse.x
-        const dy   = canvas.height / 2 - mouse.y
-        const dist = Math.sqrt(dx * dx + dy * dy)
-        const inf  = Math.max(0, 1 - dist / 320)
-        const pull = inf * 70 * Math.sin(t * 0.001 + x * 0.01 + w.offset)
-        const y    = canvas.height / 2
-          + Math.sin(x * w.frequency + t * 0.002 + w.offset) * w.amplitude
-          + Math.sin(x * w.frequency * 0.4 + t * 0.003)      * (w.amplitude * 0.45)
-          + pull
-        x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
-      }
-      ctx.lineWidth   = 2.5
-      ctx.strokeStyle = w.color
-      ctx.globalAlpha = w.opacity
-      ctx.shadowBlur  = 35
-      ctx.shadowColor = w.color
-      ctx.stroke(); ctx.restore()
-    }
-
-    const animate = () => {
-      t++
-      mouse.x += (aim.x - mouse.x) * 0.1
-      mouse.y += (aim.y - mouse.y) * 0.1
-      ctx.globalAlpha = 1; ctx.shadowBlur = 0
-      ctx.fillStyle = '#0A0A0A'
-      ctx.fillRect(0, 0, canvas.width, canvas.height)
-      WAVES.forEach(drawWave)
-      id = requestAnimationFrame(animate)
-    }
-    id = requestAnimationFrame(animate)
-
-    return () => {
-      cancelAnimationFrame(id)
-      window.removeEventListener('resize',     resize)
-      window.removeEventListener('mousemove',  onMove)
-      window.removeEventListener('mouseleave', onLeave)
-    }
-  }, [])
-
-  return <canvas ref={ref} className="absolute inset-0 w-full h-full" aria-hidden />
-}
-
-// ── Scramble title ─────────────────────────────────────────────────────────────
-const CHARS  = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%ÇÃÕ!?'
-const TARGET = 'SUA MARCA NO PRÓXIMO NÍVEL'
-
-function useScramble(target: string, delay = 350) {
-  const [text, setText] = useState(() => target.replace(/[^ ]/g, CHARS[0]))
-
-  useEffect(() => {
-    let frame = 0; let iv: ReturnType<typeof setInterval>
-    const total = 40
-    const t = setTimeout(() => {
-      iv = setInterval(() => {
-        const revealed = Math.floor((frame / total) * target.length)
-        setText(
-          target.split('').map((ch, i) => {
-            if (ch === ' ') return ' '
-            if (i < revealed) return ch
-            return CHARS[Math.floor(Math.random() * CHARS.length)]
-          }).join('')
-        )
-        if (++frame > total) { clearInterval(iv); setText(target) }
-      }, 42)
-    }, delay)
-    return () => { clearTimeout(t); clearInterval(iv) }
-  }, [target, delay])
-
-  return text
-}
-
-// ── Count-up stat ──────────────────────────────────────────────────────────────
-const STATS = [
-  { raw: 120, suffix: '+', label: 'Projetos'      },
-  { raw: 98,  suffix: '%', label: 'Satisfação'     },
-  { raw: 5,   suffix: '★', label: 'Avaliação'      },
-  { raw: 5,   suffix: '+', label: 'Anos'           },
-  { raw: 3,   suffix: '',  label: 'BR · USA · EUR' },
-]
-
-function Stat({ raw, suffix, label }: typeof STATS[0]) {
-  const ref    = useRef<HTMLDivElement>(null)
-  const inView = useInView(ref, { once: true, margin: '-60px' })
-  const [n, setN] = useState(0)
-
-  useEffect(() => {
-    if (!inView) return
-    const dur   = 1400
-    const start = performance.now()
-    const tick  = (now: number) => {
-      const p     = Math.min((now - start) / dur, 1)
-      const eased = 1 - Math.pow(1 - p, 3)
-      setN(Math.round(eased * raw))
-      if (p < 1) requestAnimationFrame(tick)
-    }
-    requestAnimationFrame(tick)
-  }, [inView, raw])
-
-  return (
-    <div ref={ref} className="flex flex-col items-center gap-1">
-      <span
-        className="font-black text-white leading-none"
-        style={{ fontSize: 'clamp(1.8rem, 3.2vw, 2.6rem)' }}
-      >
-        {n}{suffix}
-      </span>
-      <span className="text-[#C0C0C8] text-[10px] uppercase tracking-[0.22em]">{label}</span>
-    </div>
-  )
-}
-
-// ── Hero ───────────────────────────────────────────────────────────────────────
-const WA = 'https://api.whatsapp.com/send/?phone=5562992589599&text=Ol%C3%A1%2C+gostaria+de+fazer+um+or%C3%A7amento!'
-
+/**
+ * Hero da home. Tudo espera `revealed` (a intro abrindo o site) para entrar:
+ * selo → título → linha rotativa → texto → CTAs, globo em paralelo, números por último.
+ */
 export default function Hero() {
-  const scrambled = useScramble(TARGET, 400)
+  const revealed = useRevealed()
+  const statsRef = useRef<HTMLDListElement>(null)
+  const statsInView = useInView(statsRef, { once: true, amount: 0.3 })
+  // Números visíveis na revelação (desktop) seguem a coreografia; abaixo da dobra
+  // (mobile) entram assim que a pessoa rola até eles, sem esperar.
+  const [statsDelay, setStatsDelay] = useState(0.9)
+  useEffect(() => {
+    if (!revealed) return
+    const id = requestAnimationFrame(() => {
+      const el = statsRef.current
+      if (el && el.getBoundingClientRect().top > window.innerHeight) setStatsDelay(0.1)
+    })
+    return () => cancelAnimationFrame(id)
+  }, [revealed])
+  const playStats = revealed && statsInView
 
   return (
-    <section id="home" className="relative h-screen flex items-center justify-center overflow-hidden">
-      <WaveCanvas />
+    <section
+      id="inicio"
+      aria-label="Início"
+      className="relative flex min-h-[100svh] flex-col overflow-x-clip pb-6 pt-28 sm:pt-32 lg:pb-8 lg:pt-28"
+    >
+      <div className="container-gam grid flex-1 items-center gap-y-12 lg:grid-cols-12 lg:gap-x-6">
+        {/* ── Texto ─────────────────────────────────────────────────────── */}
+        <div className="relative z-10 lg:col-span-7">
+          <Reveal play={revealed} y={14} duration={0.8}>
+            <p className="inline-flex items-center gap-2.5 rounded-full bg-surface/70 py-1.5 pl-3 pr-4 text-[13px] font-medium leading-tight text-ink-2 ring-1 ring-line">
+              <span className="pulse-dot shrink-0" aria-hidden="true" />
+              <span>
+                <span className="hidden sm:inline">Agência de marketing</span>
+                <span className="sm:hidden">Marketing</span>, mídia e tecnologia desde {FOUNDED_YEAR}
+              </span>
+            </p>
+          </Reveal>
 
-      {/* Bottom fade to next section */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0A0A0A]/15 via-transparent to-[#0A0A0A] pointer-events-none" />
+          <RevealText
+            as="h1"
+            className="type-hero mt-5 text-ink text-[length:clamp(3.1rem,min(16vw,13.2vh),9.25rem)]! lg:text-[length:clamp(3.1rem,min(9.2vw,13.2vh),9.25rem)]!"
+            lines={['Sua marca', 'no próximo', 'nível']}
+            dot
+            play={revealed}
+            delay={0.1}
+          />
 
-      <div className="relative z-10 text-center px-6 max-w-5xl mx-auto w-full">
+          <Reveal play={revealed} delay={0.55} y={18}>
+            <RotatingLine play={revealed} />
+          </Reveal>
 
-        {/* Eyebrow */}
-        <motion.p
-          className="text-[#C0C0C8] text-[10px] tracking-[0.42em] uppercase mb-7"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, delay: 0.2 }}
-        >
-          Goiânia · Brasil &nbsp;·&nbsp; BR · USA · EUR
-        </motion.p>
+          <Reveal play={revealed} delay={0.65} y={18}>
+            <p className="type-lead mt-4 max-w-[46ch] text-ink-2">
+              Sites, tráfego pago, branding e inteligência artificial trabalhando juntos para sua marca crescer no
+              Brasil, nos Estados Unidos e na Europa.
+            </p>
+          </Reveal>
 
-        {/* Scramble title */}
-        <motion.h1
-          className="font-black leading-[1.05] text-white mb-5 tracking-tight"
-          style={{ fontSize: 'clamp(2.2rem, 5.6vw, 5.4rem)' }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.35, delay: 0.1 }}
-        >
-          {scrambled.split(' ').map((word, i) => (
-            <span key={i} className="inline-block mr-[0.22em]">
-              {word === 'PRÓXIMO' || word === 'NÍVEL'
-                ? <span className="text-[#E02020]">{word}</span>
-                : word}
-            </span>
-          ))}
-        </motion.h1>
+          <Reveal play={revealed} delay={0.75} y={18} className="mt-7 flex flex-wrap items-center gap-3">
+            <Button href={WA_URL} size="lg" icon="whatsapp">
+              Faça seu orçamento
+            </Button>
+            <Button href="/portfolio" variant="outline" size="lg">
+              Ver portfólio
+            </Button>
+          </Reveal>
+        </div>
 
-        {/* Subtitle */}
-        <motion.p
-          className="text-[#C0C0C8] text-sm md:text-base tracking-[0.3em] uppercase mb-10"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, delay: 0.5 }}
-        >
-          presença · estrutura · previsibilidade
-        </motion.p>
-
-        {/* CTAs */}
+        {/* ── Globo ─────────────────────────────────────────────────────── */}
         <motion.div
-          className="flex flex-col sm:flex-row gap-4 justify-center mb-14"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, delay: 0.65 }}
+          className="relative mx-auto w-full max-w-[340px] sm:max-w-[440px] lg:col-span-5 lg:-mr-[4%] lg:w-[min(600px,112%)] lg:max-w-none lg:justify-self-end"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={revealed ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
+          transition={{ delay: 0.3, duration: 1.4, ease: EASE }}
         >
-          <a
-            href={WA}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center bg-[#E02020] text-white font-bold px-9 py-4 rounded-lg text-base hover:bg-[#C01010] transition-colors"
-            style={{ boxShadow: '0 0 30px rgba(224,32,32,0.38)' }}
-          >
-            Faça seu orçamento
-          </a>
-          <a
-            href="#portfolio"
-            className="inline-flex items-center justify-center border border-[#444] text-white font-semibold px-9 py-4 rounded-lg text-base hover:border-[#E02020] hover:text-[#E02020] transition-all duration-300"
-          >
-            Ver portfólio
-          </a>
-        </motion.div>
-
-        {/* Stats — count up when in view */}
-        <motion.div
-          className="flex items-start justify-center flex-wrap gap-x-10 gap-y-6"
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.85 }}
-        >
-          {STATS.map((s, i) => <Stat key={i} {...s} />)}
+          <Globe play={revealed} />
         </motion.div>
       </div>
 
-      {/* Scroll indicator */}
-      <motion.div
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.55, delay: 1.1 }}
-      >
-        <span className="text-[#C0C0C8] text-[9px] tracking-widest uppercase">scroll</span>
-        <motion.div
-          className="w-px h-7 bg-gradient-to-b from-[#E02020] to-transparent"
-          animate={{ scaleY: [1, 0.25, 1] }}
-          transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-        />
-      </motion.div>
+      {/* ── Números ───────────────────────────────────────────────────────── */}
+      <div className="container-gam relative mt-12 lg:mt-6">
+        <ScrollCue play={revealed} />
+        <dl ref={statsRef} className="grid grid-cols-2 border-t border-line md:grid-cols-5">
+          {STATS.map((s, i) => {
+            const wide = i === STATS.length - 1
+            return (
+              <Reveal
+                key={s.label}
+                play={playStats}
+                delay={statsDelay + i * 0.07}
+                y={16}
+                className={cn(
+                  'flex flex-col-reverse justify-end gap-2.5 py-5',
+                  i % 2 === 1 && 'border-l border-line pl-5',
+                  i >= 2 && 'border-t border-line',
+                  wide && 'col-span-2 flex-row-reverse items-center justify-between gap-6',
+                  'md:col-span-1 md:flex-col-reverse md:items-stretch md:justify-end md:gap-2.5 md:border-l md:border-t-0 md:pb-0 md:pl-6 md:pt-6 md:first:border-l-0 md:first:pl-0',
+                )}
+              >
+                <dt className={cn('text-sm leading-snug text-ink-2', wide && 'text-right md:text-left')}>
+                  {s.label}
+                  {s.detail && (
+                    <span className="mt-1 block font-mono text-[11px] leading-none tracking-tight text-ink-3">
+                      {s.detail}
+                    </span>
+                  )}
+                </dt>
+                <dd className="type-num flex items-start text-[length:clamp(2.5rem,4vw,3.75rem)] text-ink">
+                  <CountUp value={s.value} prefix={s.prefix} play={playStats} delay={statsDelay + 0.05 + i * 0.07} />
+                  {s.suffix && <span className="ml-[0.06em] mt-[0.1em] text-[0.5em] leading-none text-red">{s.suffix}</span>}
+                </dd>
+              </Reveal>
+            )
+          })}
+        </dl>
+      </div>
     </section>
+  )
+}
+
+/** "Seu negócio com mais ___." — a palavra gira num slot de largura fixa (sem layout shift). */
+function RotatingLine({ play }: { play: boolean }) {
+  const ref = useRef<HTMLParagraphElement>(null)
+  const inView = useInView(ref, { amount: 0.6 })
+  const reduce = useReducedMotion()
+  const [cycle, setCycle] = useState(0)
+
+  useEffect(() => {
+    if (!play || !inView || reduce) return
+    const id = window.setInterval(() => setCycle((n) => n + 1), CYCLE_MS)
+    return () => window.clearInterval(id)
+  }, [play, inView, reduce])
+
+  const word = WORDS[cycle % WORDS.length]
+
+  return (
+    <p
+      ref={ref}
+      className="mt-6 font-display text-[length:clamp(1.3rem,2.1vw,1.85rem)] font-semibold leading-[1.2] tracking-[-0.02em] text-ink"
+    >
+      Seu negócio com mais{' '}
+      <span className="sr-only">presença, estrutura e previsibilidade.</span>
+      <span aria-hidden="true" className="relative -mb-[0.14em] inline-grid overflow-hidden pb-[0.14em] align-bottom">
+        {/* palavras invisíveis empilhadas = largura da mais longa */}
+        {WORDS.map((w) => (
+          <span key={w} className="invisible col-start-1 row-start-1">
+            {w}.
+          </span>
+        ))}
+        <AnimatePresence initial={false}>
+          <motion.span
+            key={word}
+            className="absolute left-0 top-0 whitespace-nowrap"
+            initial={{ y: '110%' }}
+            animate={{ y: '0%' }}
+            exit={{ y: '-110%' }}
+            transition={{ duration: 0.7, ease: EASE }}
+          >
+            {word}.
+            <motion.span
+              className="absolute bottom-[0.02em] left-0 h-[2px] w-[calc(100%-0.32em)] origin-left rounded-full bg-red"
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: play ? 1 : 0 }}
+              transition={{ delay: cycle === 0 ? 1.15 : 0.4, duration: 0.8, ease: EASE }}
+            />
+          </motion.span>
+        </AnimatePresence>
+      </span>
+    </p>
+  )
+}
+
+/** Indicador de rolagem (só desktop largo — abaixo de xl colidiria com os CTAs): leva até os serviços. */
+function ScrollCue({ play }: { play: boolean }) {
+  const go = () => {
+    const target = document.getElementById('servicos')
+    if (!target) return
+    const lenis = getLenis()
+    if (lenis) lenis.scrollTo(target, { duration: 1.4 })
+    else target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  return (
+    <motion.button
+      type="button"
+      onClick={go}
+      className="absolute bottom-full left-1/2 z-20 hidden -translate-x-1/2 flex-col items-center gap-2.5 px-3 pt-2 text-xs font-medium text-ink-3 transition-colors duration-300 hover:text-ink xl:flex"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: play ? 1 : 0 }}
+      transition={{ delay: 1.3, duration: 0.8 }}
+    >
+      Role para explorar
+      <span aria-hidden="true" className="relative block h-10 w-px overflow-hidden bg-line">
+        <span className="absolute inset-0 bg-ink motion-safe:animate-[gam-scroll-line_2.4s_cubic-bezier(0.65,0,0.35,1)_infinite]" />
+      </span>
+    </motion.button>
   )
 }

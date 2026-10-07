@@ -26,24 +26,36 @@ Convenções para construir o site da GAM Studio em Next.js sem desperdiçar tok
 - Tailwind v4 (usa `@import "tailwindcss"` no globals.css, SEM `tailwind.config.js`)
 - shadcn/ui (componentes base em `components/ui/`)
 - Framer Motion, GSAP (+ ScrollTrigger), Three.js, Lenis — todos já instalados
-- Fonte: Inter (Google Font) + Geist via shadcn
+- Fontes (next/font/google no `app/layout.tsx`): Bricolage Grotesque (display), Geist (texto), Geist Mono
 
 ## Arquitetura
 
-- SPA (single page) — todas as seções numa rota só (`app/page.tsx`)
-- `app/layout.tsx` envolve tudo com providers de Lenis (smooth scroll) e cursor customizado
-- `app/page.tsx` controla o estado `loaded` que libera o conteúdo após a intro
-- Componentes de seção em `components/`
-- Delays de animação são relativos ao mount do componente, não ao load da página
+- Home (`app/page.tsx`) com todas as seções + páginas internas `/servicos`, `/portfolio`, `/sobre`, `/contato` (todas abrem com `PageHero` e fecham com `Footer`)
+- `app/layout.tsx` envolve tudo com Lenis (smooth scroll), `AmbientBackground`, `Cursor` e `ScrollProgressBar`
+- `app/page.tsx` renderiza o site desde o início (SEO) com a `Intro` por cima; o estado `revealed` (via `IntroContext`) libera as entradas do Hero/Navbar
+- Componentes de seção em `components/`, primitivos em `components/system/`
 
-## Identidade visual GAM Studio
+## Identidade visual GAM Studio (tema claro "Névoa" — desde out/2026)
 
-- **Base:** preto suave `#0A0A0A`, superfícies em `#111111` com borda `#222222`. NUNCA preto total puro — o site não pode ficar sombrio demais.
-- **Primária:** vermelho `#E02020` (vivo, energético — não sangue/gótico)
-- **Texto:** branco `#FFFFFF` (principal) e cinza `#A0A0A0` (secundário)
-- **Fundo:** sempre ter um leve movimento de luz/partículas para não ficar morto
-- **Logo:** "GAM." com ponto vermelho (versão reduzida, usada na intro/loading) e "GAM STUDIO" com STUDIO em vermelho (navbar/footer)
-- **Tom:** premium, vibrante, internacional. Referências: Linear.app, Stripe, sites Awwwards SOTD. Layout pode ser assimétrico, tipografia grande e bold. Evitar "site de agência genérico" com cards centralizados e simétricos.
+O Gustavo achou o site escuro "muito preto" e pediu um visual claro. NÃO volte para fundo preto.
+
+- **Base clara:** `paper #f2f3f5` (fundo), `surface #fff` (cards), `line #dde0e6` (bordas). Seções claras são TRANSPARENTES para o fundo vivo aparecer.
+- **Tinta:** `ink #0e1015` (texto/títulos), `ink-2 #4a505c` (secundário), `ink-3 #6b717d` (legendas).
+- **Primária:** vermelho `red #e02020` (hover `red-600 #c21717`, tint `red-50 #fdecec`).
+- **Bandas escuras pontuais:** `night #13151b` / `night-2 #1b1e26` com texto `mist`/`mist-2` — só em Cases e Footer (≤30% da página). CTA é banda vermelha.
+- **Tipografia:** display **Bricolage Grotesque** (`font-display`, classes `.type-hero/.type-display/.type-title/.type-card/.type-num`), texto **Geist**, detalhes **Geist Mono**.
+- **Fundo:** `components/system/AmbientBackground` (grade de pontos que reage ao cursor + auroras + "pings" + grain) — global no layout, não duplicar.
+- **Assinatura:** o ponto vermelho. Logo "GAM." (intro) e "GAM STUDIO" com STUDIO vermelho (navbar/footer). Títulos terminam com ponto vermelho (`RevealText dot`) em vez de pintar palavras soltas de vermelho. Cada seção abre com `Kicker` (ponto pulsando + rótulo em sentence case).
+- **Tom:** premium, vibrante, internacional. Referências: Linear, Stripe, Awwwards SOTD + o padrão construtivo do site de streamer que ele amou (intro com timeline, canvas vivo, nav de vidro, cards com spotlight/tilt, marquee inclinado, hovers com preenchimento deslizante, contadores).
+
+## Onde as coisas ficam (design system)
+
+- `lib/site.ts` — TODO o conteúdo (contatos, links WhatsApp, serviços com slug/ícone, stats, cases da home, depoimentos). Edite aqui, não nos componentes.
+- `lib/intro.tsx` — `useRevealed()`: na home fica `false` até a intro abrir a tela; Hero/Navbar esperam por ele.
+- `components/system/` — primitivos: `Reveal`, `RevealText`, `SectionHeading`/`Kicker`, `Button` (pílula com texto que rola + ícone whatsapp/instagram/arrow), `SpotlightCard`, `CountUp`, `MarqueeBand`, `PageHero` (topo das páginas internas), `Logo`, `Cursor`, `AmbientBackground`.
+- Tokens e utilitários (`container-gam`, `section-y`, `mask-fade-x/y`, `bg-dot-grid`) em `app/globals.css`.
+- `?intro=0` na URL da home pula a intro (útil para testar/printar).
+- Se o CSS novo não aparecer no dev server, é cache do Turbopack: pare o `npm run dev`, apague `.next/dev` e suba de novo.
 
 ## Conteúdo do site
 
@@ -81,7 +93,7 @@ Convenções para construir o site da GAM Studio em Next.js sem desperdiçar tok
 
 1. Texto em partículas: "SEJA BEM-VINDO À SUA NOVA REALIDADE"
 2. Partículas se reorganizam formando a logo "GAM."
-3. Dissolve (fade) para o Hero
+3. O ponto vermelho do "GAM." cresce até cobrir a tela e abre um "buraco" revelando o site claro (Hero entra nesse momento)
 
 ## Erros a NUNCA cometer
 

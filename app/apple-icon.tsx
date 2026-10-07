@@ -11,64 +11,31 @@ export default function AppleIcon() {
           width:          '100%',
           height:         '100%',
           display:        'flex',
-          flexDirection:  'column',
           alignItems:     'center',
           justifyContent: 'center',
-          background:     '#0E0E10',
-          borderRadius:   40,
+          background:     '#f2f3f5',
           position:       'relative',
+          overflow:       'hidden',
         }}
       >
-        {/* Subtle red glow */}
+        {/* Ponto da marca saindo pelo canto */}
         <div
           style={{
             position:     'absolute',
-            top:          -30,
-            right:        -30,
-            width:        140,
-            height:       140,
-            borderRadius: '50%',
-            background:   'radial-gradient(circle, rgba(224,32,32,0.20) 0%, transparent 70%)',
+            right:        -50,
+            bottom:       -50,
+            width:        110,
+            height:       110,
+            borderRadius: 999,
+            background:   '#e02020',
+            opacity:      0.12,
           }}
         />
-
-        {/* "GAM" */}
         <div style={{ display: 'flex', alignItems: 'baseline' }}>
-          <span
-            style={{
-              fontSize:      62,
-              fontWeight:    900,
-              color:         '#FFFFFF',
-              lineHeight:    1,
-              letterSpacing: '-2px',
-            }}
-          >
+          <span style={{ fontSize: 64, fontWeight: 900, color: '#0e1015', lineHeight: 1, letterSpacing: '-3px' }}>
             GAM
           </span>
-          <span
-            style={{
-              fontSize:      62,
-              fontWeight:    900,
-              color:         '#E02020',
-              lineHeight:    1,
-              letterSpacing: '-2px',
-            }}
-          >
-            .
-          </span>
-        </div>
-
-        {/* "STUDIO" label */}
-        <div
-          style={{
-            fontSize:      13,
-            fontWeight:    700,
-            color:         '#E02020',
-            letterSpacing: '0.35em',
-            marginTop:     8,
-          }}
-        >
-          STUDIO
+          <span style={{ fontSize: 64, fontWeight: 900, color: '#e02020', lineHeight: 1 }}>.</span>
         </div>
       </div>
     ),

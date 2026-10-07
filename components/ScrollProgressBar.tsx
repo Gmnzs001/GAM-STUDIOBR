@@ -1,23 +1,49 @@
 'use client'
 
-import { useScroll, useSpring, motion, useReducedMotion } from 'framer-motion'
+import { useEffect, useRef } from 'react'
+import { onScrollY } from '@/lib/lenis-ref'
 
+/**
+ * Barra fina de progresso de leitura no topo.
+ * Usa a posição publicada pelo Lenis (sem ler layout no scroll) e escreve
+ * direto no transform — o Lenis já suaviza o movimento.
+ */
 export default function ScrollProgressBar() {
-  const prefersReduced = useReducedMotion()
-  const { scrollYProgress } = useScroll()
+  const ref = useRef<HTMLDivElement>(null)
 
-  // Spring suaviza o preenchimento; reduced-motion usa spring rígida (sem delay)
-  const scaleX = useSpring(scrollYProgress, {
-    stiffness: prefersReduced ? 1000 : 90,
-    damping:   prefersReduced ? 100  : 28,
-    restDelta: 0.001,
-  })
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    let max = 1
+    let y = window.scrollY
+
+    const paint = () => {
+      el.style.transform = `scaleX(${Math.min(1, Math.max(0, y / max))})`
+    }
+    const measure = () => {
+      max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight)
+      paint()
+    }
+
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(document.body)
+    window.addEventListener('resize', measure)
+    const off = onScrollY((v) => { y = v; paint() })
+
+    return () => {
+      off()
+      ro.disconnect()
+      window.removeEventListener('resize', measure)
+    }
+  }, [])
 
   return (
-    <motion.div
+    <div
+      ref={ref}
       aria-hidden="true"
-      className="fixed top-0 left-0 right-0 h-[2px] z-[200] origin-left pointer-events-none"
-      style={{ scaleX, backgroundColor: '#E02020' }}
+      className="pointer-events-none fixed inset-x-0 top-0 z-[200] h-[2px] origin-left bg-red"
+      style={{ transform: 'scaleX(0)' }}
     />
   )
 }

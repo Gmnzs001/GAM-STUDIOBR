@@ -1,390 +1,219 @@
 'use client'
 
-import { useRef, useState } from 'react'
-import { motion, useInView, AnimatePresence } from 'framer-motion'
+import { Fragment, useRef } from 'react'
+import { motion, useScroll, useTransform, useReducedMotion } from 'framer-motion'
 import { Marquee } from '@/components/Marquee'
-import Magnetic from '@/components/Magnetic'
+import Button from '@/components/system/Button'
+import { Reveal } from '@/components/system/Reveal'
+import ContactForm from '@/components/ContactForm'
+import { FOUNDED_YEAR, INSTAGRAM_HANDLE, INSTAGRAM_URL, SERVICES, WA_URL } from '@/lib/site'
+import { cn } from '@/lib/utils'
 
-// ─── Web3Forms ────────────────────────────────────────────────────────────────
-// Crie sua chave gratuita em https://web3forms.com e cole abaixo
-const WEB3FORMS_KEY = '318470fc-e955-44fd-99f1-8fe61f0c6d34'
-const WA_URL = 'https://api.whatsapp.com/send/?phone=5562992589599&text=Ol%C3%A1%21+Vim+pelo+site+e+gostaria+de+fazer+um+or%C3%A7amento.'
+const EASE = [0.16, 1, 0.3, 1] as const
 
-const SERVICES_TICKER = [
-  'Criação de Sites', 'SEO', 'Agentes IA', 'Google ADS',
-  'Landing Pages', 'Publicidade', 'Redes Sociais',
-  'Produção de Conteúdo', 'Branding', 'Mídia', 'Eventos', 'Consultoria',
+// Nomes curtos para a faixa gigante (mais impacto, menos quebra)
+const TICKER = SERVICES.map((s) => s.name.replace('Consultoria em ', '').replace(' Completa', ''))
+
+const TITLE = 'Pronto para levar sua marca ao próximo nível'
+
+const FACTS = [
+  { value: '24h', label: 'para responder seu contato' },
+  { value: '3 regiões', label: 'Brasil, Estados Unidos e Europa' },
+  { value: String(FOUNDED_YEAR), label: 'ano em que nascemos, em Goiânia' },
 ]
 
-const SERVICE_OPTIONS = [
-  'Criação de Sites',
-  'Consultoria em SEO',
-  'Agentes IA',
-  'Google ADS',
-  'Landing Pages',
-  'Publicidade / Mídia',
-  'Redes Sociais',
-  'Produção de Conteúdo',
-  'Branding',
-  'Eventos',
-  'Consultoria Completa',
-  'Outro',
-]
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-type Status = 'idle' | 'sending' | 'success' | 'error'
-
-type Fields = {
-  name:     string
-  whatsapp: string
-  email:    string
-  service:  string
-  message:  string
-}
-
-type Errors = Partial<Record<keyof Fields, string>>
-
-// ─── Validation ───────────────────────────────────────────────────────────────
-function validate(f: Fields): Errors {
-  const e: Errors = {}
-  if (f.name.trim().length < 2)                                  e.name     = 'Informe seu nome completo.'
-  if (f.whatsapp.replace(/\D/g, '').length < 8)                  e.whatsapp = 'WhatsApp inválido.'
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email))              e.email    = 'E-mail inválido.'
-  if (!f.service)                                                 e.service  = 'Selecione um serviço.'
-  if (f.message.trim().length < 10)                              e.message  = 'Mensagem muito curta (mín. 10 caracteres).'
-  return e
-}
-
-// ─── Input classes ────────────────────────────────────────────────────────────
-const inputCls = (err?: string) =>
-  `w-full bg-[#111111] border rounded-lg px-4 py-3.5 text-sm text-white placeholder-[#444444]
-   focus:outline-none transition-colors
-   ${err ? 'border-red-500 focus:border-red-400' : 'border-[#222222] focus:border-[#E02020]'}`
-
-// ─── Component ────────────────────────────────────────────────────────────────
+/**
+ * CTA final da home: banda vermelha com os serviços passando gigantes na tela,
+ * chamada à esquerda e formulário de orçamento num card branco à direita.
+ */
 export default function CTASection() {
-  const ref    = useRef<HTMLElement>(null)
-  const inView = useInView(ref, { once: true, margin: '-60px' })
-
-  const [fields, setFields] = useState<Fields>({
-    name: '', whatsapp: '', email: '', service: '', message: '',
-  })
-  const [errors,  setErrors]  = useState<Errors>({})
-  const [status,  setStatus]  = useState<Status>('idle')
-  const [touched, setTouched] = useState<Partial<Record<keyof Fields, boolean>>>({})
-
-  const set = (k: keyof Fields) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const updated = { ...fields, [k]: e.target.value }
-    setFields(updated)
-    if (touched[k]) setErrors(validate(updated))
-  }
-
-  const blur = (k: keyof Fields) => () => {
-    setTouched((t) => ({ ...t, [k]: true }))
-    setErrors(validate(fields))
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const allTouched = { name: true, whatsapp: true, email: true, service: true, message: true }
-    setTouched(allTouched)
-    const errs = validate(fields)
-    setErrors(errs)
-    if (Object.keys(errs).length) return
-
-    setStatus('sending')
-    try {
-      const res = await fetch('https://api.web3forms.com/submit', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({
-          access_key: WEB3FORMS_KEY,
-          subject:    `Novo contato GAM Studio — ${fields.service}`,
-          name:       fields.name,
-          email:      fields.email,
-          whatsapp:   fields.whatsapp,
-          service:    fields.service,
-          message:    fields.message,
-          from_name:  'Site GAM Studio',
-        }),
-      })
-      const data = await res.json()
-      setStatus(data.success ? 'success' : 'error')
-    } catch {
-      setStatus('error')
-    }
-  }
-
-  const reset = () => {
-    setFields({ name: '', whatsapp: '', email: '', service: '', message: '' })
-    setErrors({})
-    setTouched({})
-    setStatus('idle')
-  }
+  const ref = useRef<HTMLElement>(null)
+  const reduce = useReducedMotion()
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] })
+  // Leve deslocamento extra das faixas conforme o scroll (sensação de velocidade)
+  const xA = useTransform(scrollYProgress, [0, 1], reduce ? ['0%', '0%'] : ['4%', '-10%'])
+  const xB = useTransform(scrollYProgress, [0, 1], reduce ? ['0%', '0%'] : ['-8%', '4%'])
+  const markY = useTransform(scrollYProgress, [0, 1], reduce ? ['0%', '0%'] : ['18%', '-12%'])
 
   return (
-    <section ref={ref} id="contato" className="relative overflow-hidden">
-
-      {/* ── Ticker ── */}
-      <div className="border-y border-[#1A1A1A] bg-[#0A0A0A]/80 py-3.5">
-        <Marquee className="[--duration:28s] [--gap:0px]" repeat={4}>
-          {SERVICES_TICKER.map((s) => (
-            <span key={s} className="flex items-center">
-              <span className="text-[#666] text-[13px] font-medium px-6 tracking-wide">{s}</span>
-              <span className="text-[#E02020] text-[10px]">◆</span>
-            </span>
-          ))}
-        </Marquee>
+    <section
+      ref={ref}
+      id="contato"
+      aria-labelledby="cta-title"
+      className="relative isolate scroll-mt-28 overflow-hidden bg-red text-white"
+    >
+      {/* ── Decoração ── */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute inset-0 bg-[radial-gradient(70%_55%_at_12%_0%,rgba(255,255,255,0.16),transparent_65%),radial-gradient(60%_60%_at_100%_100%,rgba(110,0,0,0.38),transparent_70%)]" />
+        <div className="bg-dot-grid-light absolute inset-0 [mask-image:linear-gradient(to_bottom,transparent,#000_30%,#000_80%,transparent)] opacity-90" />
+        <motion.div
+          style={{ y: markY }}
+          className="absolute -bottom-[0.2em] -left-[0.04em] select-none font-display text-[clamp(14rem,40vw,40rem)] font-extrabold leading-[0.8] tracking-[-0.06em] text-white/[0.07]"
+        >
+          GAM.
+        </motion.div>
       </div>
 
-      {/* ── Main CTA ── */}
-      <div className="relative py-24 px-6">
-        {/* Animated gradient bg */}
-        <motion.div
-          className="absolute inset-0 -z-10"
-          animate={{
-            background: [
-              'radial-gradient(ellipse 80% 60% at 20% 50%, #161616 0%, #0A0A0A 65%)',
-              'radial-gradient(ellipse 80% 60% at 80% 50%, #161616 0%, #0A0A0A 65%)',
-              'radial-gradient(ellipse 80% 60% at 50% 15%, #161616 0%, #0A0A0A 65%)',
-              'radial-gradient(ellipse 80% 60% at 20% 50%, #161616 0%, #0A0A0A 65%)',
-            ],
-          }}
-          transition={{ duration: 9, repeat: Infinity, ease: 'linear' }}
-        />
-
-        <div className="max-w-2xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-10">
-            <motion.p
-              className="text-[#E02020] text-xs tracking-[0.32em] uppercase font-semibold mb-3"
-              initial={{ opacity: 0, y: 10 }}
-              animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.45 }}
-            >
-              Vamos conversar
-            </motion.p>
-            <motion.h2
-              className="text-4xl md:text-6xl font-black text-white mb-4 leading-none"
-              initial={{ opacity: 0, y: 20 }}
-              animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.45, delay: 0.1 }}
-            >
-              Pronto para o{' '}
-              <span className="text-[#E02020]">próximo nível</span>?
-            </motion.h2>
-            <motion.p
-              className="text-[#C0C0C8] text-sm"
-              initial={{ opacity: 0 }}
-              animate={inView ? { opacity: 1 } : {}}
-              transition={{ duration: 0.45, delay: 0.2 }}
-            >
-              Preencha o formulário — respondemos em até 24h.
-            </motion.p>
-          </div>
-
-          {/* ── Form / Success / Error ── */}
-          <motion.div
-            initial={{ opacity: 0, y: 28 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.45, delay: 0.28 }}
-          >
-            <AnimatePresence mode="wait">
-
-              {/* ── SUCCESS ── */}
-              {status === 'success' && (
-                <motion.div
-                  key="success"
-                  className="flex flex-col items-center gap-5 py-14 text-center"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.35 }}
-                >
-                  <div className="w-16 h-16 rounded-full bg-[#E02020]/10 border border-[#E02020]/30 flex items-center justify-center">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#E02020" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-xl font-bold text-white mb-1">Mensagem enviada!</p>
-                    <p className="text-[#C0C0C8] text-sm">Retornaremos em até 24h. Enquanto isso, fale no WhatsApp.</p>
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <Magnetic strength={0.22}>
-                      <a
-                        href={WA_URL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center bg-[#E02020] text-white text-sm font-bold px-6 py-3 rounded-lg hover:bg-[#C01010] transition-colors"
-                      >
-                        Ir para WhatsApp
-                      </a>
-                    </Magnetic>
-                    <Magnetic strength={0.22}>
-                      <button
-                        onClick={reset}
-                        className="border border-[#333333] text-[#C0C0C8] text-sm font-medium px-6 py-3 rounded-lg hover:border-[#555555] hover:text-white transition-colors"
-                      >
-                        Nova mensagem
-                      </button>
-                    </Magnetic>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* ── FORM ── */}
-              {status !== 'success' && (
-                <motion.form
-                  key="form"
-                  onSubmit={handleSubmit}
-                  noValidate
-                  className="flex flex-col gap-3.5"
-                  initial={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                >
-                  {/* Row 1: nome + whatsapp */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                    <div>
-                      <input
-                        type="text"
-                        placeholder="Seu nome *"
-                        aria-label="Seu nome"
-                        value={fields.name}
-                        onChange={set('name')}
-                        onBlur={blur('name')}
-                        className={inputCls(errors.name)}
-                      />
-                      {errors.name && <p className="text-red-400 text-xs mt-1 ml-1">{errors.name}</p>}
-                    </div>
-                    <div>
-                      <input
-                        type="tel"
-                        placeholder="WhatsApp (DDD + número) *"
-                        aria-label="WhatsApp"
-                        value={fields.whatsapp}
-                        onChange={set('whatsapp')}
-                        onBlur={blur('whatsapp')}
-                        className={inputCls(errors.whatsapp)}
-                      />
-                      {errors.whatsapp && <p className="text-red-400 text-xs mt-1 ml-1">{errors.whatsapp}</p>}
-                    </div>
-                  </div>
-
-                  {/* Row 2: email + serviço */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                    <div>
-                      <input
-                        type="email"
-                        placeholder="Seu e-mail *"
-                        aria-label="E-mail"
-                        value={fields.email}
-                        onChange={set('email')}
-                        onBlur={blur('email')}
-                        className={inputCls(errors.email)}
-                      />
-                      {errors.email && <p className="text-red-400 text-xs mt-1 ml-1">{errors.email}</p>}
-                    </div>
-                    <div>
-                      <select
-                        aria-label="Serviço de interesse"
-                        value={fields.service}
-                        onChange={set('service')}
-                        onBlur={blur('service')}
-                        className={`${inputCls(errors.service)} ${!fields.service ? 'text-[#767680]' : ''}`}
-                      >
-                        <option value="" disabled>Serviço de interesse *</option>
-                        {SERVICE_OPTIONS.map((s) => (
-                          <option key={s} value={s} className="bg-[#111111] text-white">{s}</option>
-                        ))}
-                      </select>
-                      {errors.service && <p className="text-red-400 text-xs mt-1 ml-1">{errors.service}</p>}
-                    </div>
-                  </div>
-
-                  {/* Row 3: mensagem */}
-                  <div>
-                    <textarea
-                      placeholder="Conte sobre seu projeto... *"
-                      aria-label="Mensagem"
-                      rows={4}
-                      value={fields.message}
-                      onChange={set('message')}
-                      onBlur={blur('message')}
-                      className={`${inputCls(errors.message)} resize-none`}
-                    />
-                    {errors.message && <p className="text-red-400 text-xs mt-1 ml-1">{errors.message}</p>}
-                  </div>
-
-                  {/* Error banner */}
-                  {status === 'error' && (
-                    <p className="text-red-400 text-sm text-center bg-red-500/10 border border-red-500/20 rounded-lg py-3">
-                      Erro ao enviar. Tente novamente ou fale direto no WhatsApp.
-                    </p>
-                  )}
-
-                  {/* Submit */}
-                  <Magnetic strength={0.18} className="w-full">
-                    <button
-                      type="submit"
-                      disabled={status === 'sending'}
-                      className="relative w-full bg-[#E02020] text-white font-bold py-4 rounded-lg text-sm
-                                 hover:bg-[#C01010] active:scale-[0.98] transition-all
-                                 disabled:opacity-70 disabled:cursor-not-allowed"
-                      style={{ boxShadow: '0 0 32px rgba(224,32,32,0.30)' }}
-                    >
-                      {status === 'sending' ? (
-                        <span className="flex items-center justify-center gap-2">
-                          <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="white" strokeWidth="4"/>
-                            <path className="opacity-75" fill="white" d="M4 12a8 8 0 018-8v8H4z"/>
-                          </svg>
-                          Enviando...
-                        </span>
-                      ) : 'Enviar mensagem'}
-                    </button>
-                  </Magnetic>
-
-                  <p className="text-center text-[#767680] text-xs mt-1">
-                    Ou fale direto:{' '}
-                    <a href={WA_URL} target="_blank" rel="noopener noreferrer" className="text-[#E02020] hover:underline">
-                      WhatsApp 62 99258-9599
-                    </a>
-                  </p>
-                </motion.form>
-              )}
-            </AnimatePresence>
+      {/* ── Serviços passando na tela ── */}
+      <div className="relative border-b border-white/15 pb-6 pt-14 md:pb-10 md:pt-20">
+        <p className="sr-only">Serviços: {SERVICES.map((s) => s.name).join(', ')}.</p>
+        <div aria-hidden="true" className="mask-fade-x overflow-hidden">
+          <motion.div style={{ x: xA }}>
+            <Marquee repeat={3} ariaRole="presentation" tabIndex={-1} className="overflow-visible p-0 [--duration:70s] [--gap:0px]">
+              {TICKER.map((s, i) => (
+                <TickerWord key={s} word={s} outline={i % 2 === 1} />
+              ))}
+            </Marquee>
           </motion.div>
-
-          {/* Direct contacts */}
-          <motion.div
-            className="flex flex-col sm:flex-row items-center justify-center gap-6 mt-9 pt-9 border-t border-[#1E1E1E]"
-            initial={{ opacity: 0 }}
-            animate={inView ? { opacity: 1 } : {}}
-            transition={{ duration: 0.45, delay: 0.45 }}
-          >
-            <a
-              href={WA_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-sm text-[#C0C0C8] hover:text-white transition-colors"
-            >
-              <span className="text-[#E02020] font-semibold">WhatsApp</span>
-              <span>62 99258-9599</span>
-            </a>
-            <div className="hidden sm:block w-px h-4 bg-[#2A2A2A]" />
-            <a
-              href="https://instagram.com/gamstudio.br"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-sm text-[#C0C0C8] hover:text-white transition-colors"
-            >
-              <span className="text-[#E02020] font-semibold">Instagram</span>
-              <span>@gamstudio.br</span>
-            </a>
+          <motion.div style={{ x: xB }} className="-mt-2 md:-mt-6">
+            <Marquee repeat={3} reverse ariaRole="presentation" tabIndex={-1} className="overflow-visible p-0 [--duration:80s] [--gap:0px]">
+              {[...TICKER].reverse().map((s, i) => (
+                <TickerWord key={s} word={s} outline={i % 2 === 0} small />
+              ))}
+            </Marquee>
           </motion.div>
         </div>
       </div>
+
+      {/* ── Chamada + formulário ── */}
+      <div className="container-gam relative grid gap-12 pb-20 pt-14 md:pb-28 md:pt-20 lg:grid-cols-12 lg:gap-10 xl:gap-16">
+        <div className="flex flex-col lg:sticky lg:top-28 lg:col-span-6 lg:self-start lg:pt-4">
+          <LightKicker>Vamos conversar</LightKicker>
+
+          <CTATitle />
+
+          <Reveal delay={0.25}>
+            <p className="type-lead mt-7 max-w-[40ch] text-white/85">
+              Conte o que você precisa. Respondemos em até 24h.
+            </p>
+          </Reveal>
+
+          <Reveal delay={0.35} className="mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap [&>div]:w-full sm:[&>div]:w-auto [&_a]:w-full">
+            <Button href={WA_URL} variant="white" icon="whatsapp">
+              Chamar no WhatsApp
+            </Button>
+            <Button href={INSTAGRAM_URL} variant="outline-light" icon="instagram">
+              {INSTAGRAM_HANDLE}
+            </Button>
+          </Reveal>
+
+          <Reveal delay={0.45} className="pt-12 lg:pt-20">
+            <dl className="grid grid-cols-1 gap-5 border-t border-white/20 pt-7 sm:grid-cols-3 sm:gap-6">
+              {FACTS.map((f) => (
+                <div key={f.value} className="flex items-baseline gap-3 sm:block">
+                  <dt className="font-display text-[1.75rem] font-bold leading-none tracking-[-0.035em] sm:text-[2rem]">
+                    {f.value}
+                  </dt>
+                  <dd className="text-sm leading-snug text-white/75 sm:mt-2">{f.label}</dd>
+                </div>
+              ))}
+            </dl>
+          </Reveal>
+        </div>
+
+        <Reveal delay={0.15} y={48} className="lg:col-span-6">
+          <div className="relative rounded-[28px] bg-surface p-6 text-ink shadow-[var(--shadow-lift)] md:p-8">
+            {/* aba superior do card */}
+            <div className="mb-7 flex flex-wrap items-start justify-between gap-x-6 gap-y-3 border-b border-line pb-6">
+              <div>
+                <p className="type-card text-ink">
+                  Peça seu orçamento<span className="gam-dot">.</span>
+                </p>
+                <p className="mt-1.5 text-sm text-ink-2">Sem compromisso. Leva só um minuto.</p>
+              </div>
+              <span className="inline-flex h-8 items-center gap-2 rounded-full bg-red-50 px-3 text-[0.8125rem] font-semibold text-red-600">
+                <span className="pulse-dot" aria-hidden="true" />
+                Resposta em até 24h
+              </span>
+            </div>
+            <ContactForm compact />
+          </div>
+        </Reveal>
+      </div>
     </section>
+  )
+}
+
+// ─── Peças locais ─────────────────────────────────────────────────────────────
+function TickerWord({ word, outline, small }: { word: string; outline?: boolean; small?: boolean }) {
+  return (
+    <span className="flex shrink-0 items-center">
+      <span
+        className={cn(
+          'whitespace-nowrap px-[0.28em] font-display font-extrabold leading-[1.02] tracking-[-0.045em]',
+          small ? 'text-[clamp(2.75rem,7vw,6.5rem)]' : 'text-[clamp(3.5rem,10vw,9.5rem)]',
+          outline
+            ? 'text-red [paint-order:stroke_fill] [-webkit-text-stroke:3px_rgba(255,255,255,0.9)] md:[-webkit-text-stroke:4px_rgba(255,255,255,0.9)]'
+            : 'text-white',
+        )}
+      >
+        {word}
+      </span>
+      <span
+        className={cn(
+          'mx-[0.15em] inline-block shrink-0 rounded-full bg-ink',
+          small ? 'size-[clamp(0.6rem,1.1vw,1rem)]' : 'size-[clamp(0.75rem,1.4vw,1.35rem)]',
+        )}
+      />
+    </span>
+  )
+}
+
+/** Kicker em versão clara para a banda vermelha (o pulso vermelho sumiria). */
+function LightKicker({ children }: { children: string }) {
+  return (
+    <div className="mb-7 flex items-center gap-3">
+      <span className="relative flex size-2 shrink-0" aria-hidden="true">
+        <span className="absolute inset-0 animate-ping rounded-full bg-white/70 motion-reduce:animate-none" />
+        <span className="relative size-2 rounded-full bg-white" />
+      </span>
+      <span className="type-label text-white">{children}</span>
+      <motion.span
+        aria-hidden="true"
+        className="h-px w-16 origin-left bg-white/45"
+        initial={{ scaleX: 0 }}
+        whileInView={{ scaleX: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 1.1, ease: EASE, delay: 0.15 }}
+      />
+    </div>
+  )
+}
+
+/** Título palavra a palavra; o "?" final ganha a cor tinta (o acento da marca sobre o vermelho). */
+function CTATitle() {
+  const words = TITLE.split(' ')
+  return (
+    <h2
+      id="cta-title"
+      aria-label={`${TITLE}?`}
+      className="type-display max-w-[13ch] text-[clamp(2.6rem,5.2vw,5.25rem)] text-white"
+    >
+      <motion.span
+        aria-hidden="true"
+        className="block"
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.4 }}
+      >
+        {words.map((w, i) => (
+          <Fragment key={i}>
+            <span className="-mb-[0.12em] inline-block overflow-hidden pb-[0.12em] align-bottom">
+              <motion.span
+                className="inline-block origin-bottom-left"
+                variants={{
+                  hidden: { y: '115%', rotate: 4 },
+                  show: { y: '0%', rotate: 0, transition: { duration: 1, ease: EASE, delay: i * 0.055 } },
+                }}
+              >
+                {w}
+                {i === words.length - 1 && <span className="text-ink">?</span>}
+              </motion.span>
+            </span>
+            {i < words.length - 1 && ' '}
+          </Fragment>
+        ))}
+      </motion.span>
+    </h2>
   )
 }

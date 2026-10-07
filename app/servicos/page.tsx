@@ -1,14 +1,21 @@
 import type { Metadata } from 'next'
 import Navbar from '@/components/Navbar'
-import { CinematicFooter } from '@/components/CinematicFooter'
-import HorizontalScroll from './HorizontalScroll'
-import ServicesTable   from './ServicesTable'
+import Footer from '@/components/Footer'
+import PageHero from '@/components/system/PageHero'
+import Button from '@/components/system/Button'
+import { Reveal, RevealText } from '@/components/system/Reveal'
+import { Kicker } from '@/components/system/SectionHeading'
+import { waLink } from '@/lib/site'
+import ConsultoriaLink from './ConsultoriaLink'
+import ServiceChips from './ServiceChips'
+import ServiceIndex from './ServiceIndex'
+import ServicePanels from './ServicePanels'
 
 export const metadata: Metadata = {
   title: 'Serviços',
   description:
-    'Criação de Sites, SEO, Agentes IA, Google ADS, Redes Sociais, Branding e muito mais. ' +
-    '12 soluções integradas de marketing e tecnologia para transformar sua presença digital.',
+    'Criação de sites, SEO, agentes de IA, Google Ads, redes sociais, branding e mais: ' +
+    '12 serviços integrados de marketing e tecnologia para fazer sua marca crescer no digital.',
 }
 
 export default function ServicosPage() {
@@ -17,79 +24,63 @@ export default function ServicosPage() {
       <Navbar />
 
       <main>
-        {/* ── Page hero ──────────────────────────────────────────────────────── */}
-        <section
-          className="relative min-h-screen flex flex-col items-center justify-center px-6 pt-24 lg:pt-32 overflow-hidden"
-          style={{ background: 'linear-gradient(180deg, #0A0A0A 0%, #0E0E10 100%)' }}
+        <PageHero
+          kicker="Serviços"
+          lines={['Tudo que sua marca', 'precisa para crescer']}
+          description="Doze serviços integrados, da estratégia à execução, para construir, escalar e consolidar sua presença digital no Brasil, nos Estados Unidos e na Europa."
         >
-          {/* Subtle grid */}
-          <div
-            aria-hidden
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              backgroundSize: '60px 60px',
-              backgroundImage:
-                'linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),' +
-                'linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px)',
-            }}
-          />
+          <ServiceChips />
+        </PageHero>
 
-          {/* Red radial glow */}
-          <div
-            aria-hidden
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background:
-                'radial-gradient(ellipse 70% 50% at 50% 60%, rgba(224,32,32,0.06) 0%, transparent 70%)',
-            }}
-          />
+        <ServiceIndex />
 
-          {/* Content */}
-          <div className="relative z-10 max-w-5xl mx-auto text-center">
-            <p className="text-[#E02020] text-xs font-bold uppercase tracking-[0.4em] mb-6">
-              O que fazemos
-            </p>
+        <ServicePanels />
 
-            <h1
-              className="font-black tracking-tighter leading-[0.88] text-white"
-              style={{ fontSize: 'clamp(3.5rem, 12vw, 9rem)' }}
-            >
-              Nossa
-              <br />
-              <span className="text-[#E02020]">
-                Expertise
+        {/* CTA final (logo após os painéis: topo menor para não somar dois respiros) */}
+        <section className="pb-[calc(var(--section-y)*0.6)] pt-[calc(var(--section-y)*0.45)]">
+          <div className="container-gam">
+            <div className="relative isolate overflow-hidden rounded-[36px] bg-red px-6 py-14 text-white shadow-[var(--shadow-red)] sm:px-12 sm:py-20 lg:px-20 lg:py-24">
+              <div aria-hidden="true" className="bg-dot-grid-light absolute inset-0 -z-10 opacity-80" />
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute -bottom-[0.2em] -right-[0.04em] -z-10 select-none font-display text-[clamp(10rem,30vw,26rem)] font-extrabold leading-none tracking-[-0.06em] text-white/[0.08]"
+              >
+                GAM.
               </span>
-            </h1>
 
-            <p className="mt-8 text-[#9898A4] text-base md:text-lg max-w-xl mx-auto leading-relaxed">
-              12 serviços integrados — da estratégia à execução — para construir, escalar e
-              consolidar sua presença digital em qualquer mercado.
-            </p>
-
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-3 text-xs text-[#767680] font-mono uppercase tracking-widest">
-              <span>12 serviços</span>
-              <span className="text-[#E02020]">✦</span>
-              <span>BR · USA · EUR</span>
-              <span className="text-[#E02020]">✦</span>
-              <span>Desde 2020</span>
+              <div className="grid gap-10 lg:grid-cols-12 lg:items-end">
+                <div className="lg:col-span-8">
+                  <Kicker tone="red" className="mb-8">Consultoria completa</Kicker>
+                  <RevealText
+                    as="h2"
+                    lines={['Não sabe por', 'onde começar?']}
+                    className="type-display max-w-[14ch] text-white"
+                  />
+                  <Reveal delay={0.15}>
+                    <p className="type-lead mt-6 max-w-[46ch] text-white/85">
+                      A Consultoria Completa faz o diagnóstico 360° da sua presença digital e entrega um plano
+                      claro para 90 dias, 6 meses e 1 ano. Você sabe exatamente onde investir.
+                    </p>
+                  </Reveal>
+                </div>
+                <Reveal delay={0.25} className="flex flex-col items-start gap-3 lg:col-span-4 lg:items-end">
+                  <Button
+                    href={waLink('Olá! Quero agendar a Consultoria Completa da GAM Studio.')}
+                    icon="whatsapp"
+                    variant="white"
+                    size="lg"
+                  >
+                    Agendar diagnóstico
+                  </Button>
+                  <ConsultoriaLink />
+                </Reveal>
+              </div>
             </div>
           </div>
-
-          {/* Scroll cue */}
-          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 text-[#333333]">
-            <span className="text-[10px] font-mono uppercase tracking-[0.4em]">scroll</span>
-            <div className="w-px h-12 bg-gradient-to-b from-[#333333] to-transparent" />
-          </div>
         </section>
-
-        {/* ── Services table: quick overview of all 12 ───────────────────────── */}
-        <ServicesTable />
-
-        {/* ── Services: desktop = horizontal, mobile = stacked ──────────────── */}
-        <HorizontalScroll />
       </main>
 
-      <CinematicFooter />
+      <Footer cta={false} />
     </>
   )
 }

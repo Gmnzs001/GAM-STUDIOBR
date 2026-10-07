@@ -2,107 +2,112 @@ import { ImageResponse } from 'next/og'
 
 export const size        = { width: 1200, height: 630 }
 export const contentType = 'image/png'
+export const alt         = 'GAM Studio — Sua marca no próximo nível'
 
-export default function Image() {
+// Bricolage Grotesque (a fonte display do site). Sem rede, cai na fonte padrão.
+async function loadFont(weight: number): Promise<ArrayBuffer | null> {
+  try {
+    const css = await fetch(
+      `https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@${weight}`,
+    ).then((r) => r.text())
+    const url = css.match(/src: url\((.+?)\) format\('(opentype|truetype)'\)/)?.[1]
+    if (!url) return null
+    return await fetch(url).then((r) => r.arrayBuffer())
+  } catch {
+    return null
+  }
+}
+
+export default async function Image() {
+  const [regular, bold] = await Promise.all([loadFont(500), loadFont(800)])
+  const fonts = [
+    regular && { name: 'Bricolage', data: regular, weight: 500 as const, style: 'normal' as const },
+    bold && { name: 'Bricolage', data: bold, weight: 800 as const, style: 'normal' as const },
+  ].filter((f): f is NonNullable<typeof f> => Boolean(f))
+
   return new ImageResponse(
     (
       <div
         style={{
-          background:     '#0A0A0A',
+          background:     '#f2f3f5',
           width:          '100%',
           height:         '100%',
           display:        'flex',
           flexDirection:  'column',
-          alignItems:     'center',
-          justifyContent: 'center',
-          fontFamily:     'sans-serif',
+          justifyContent: 'space-between',
+          padding:        '64px 72px',
+          fontFamily:     fonts.length ? 'Bricolage' : 'sans-serif',
           position:       'relative',
           overflow:       'hidden',
         }}
       >
-        {/* Subtle red grid */}
+        {/* O ponto da GAM, gigante, saindo pelo canto */}
         <div
           style={{
-            position:        'absolute',
-            inset:           0,
-            backgroundImage: 'linear-gradient(rgba(224,32,32,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(224,32,32,0.07) 1px, transparent 1px)',
-            backgroundSize:  '60px 60px',
+            position:     'absolute',
+            right:        -140,
+            bottom:       -170,
+            width:        460,
+            height:       460,
+            borderRadius: 999,
+            background:   '#e02020',
+          }}
+        />
+        <div
+          style={{
+            position:     'absolute',
+            right:        -230,
+            bottom:       -260,
+            width:        640,
+            height:       640,
+            borderRadius: 999,
+            border:       '2px solid rgba(224,32,32,0.25)',
           }}
         />
 
-        {/* Corner glow */}
-        <div
-          style={{
-            position:  'absolute',
-            top:       -120,
-            right:     -120,
-            width:     400,
-            height:    400,
-            borderRadius: '50%',
-            background:   'radial-gradient(circle, rgba(224,32,32,0.18) 0%, transparent 70%)',
-          }}
-        />
-
-        {/* Top accent bar */}
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: '#E02020' }} />
-
-        {/* Logo mark */}
-        <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 12 }}>
-          <span style={{ fontSize: 110, fontWeight: 900, color: '#FFFFFF', letterSpacing: '-3px', lineHeight: 1 }}>
-            GAM
-          </span>
-          <span style={{ fontSize: 110, fontWeight: 900, color: '#E02020', letterSpacing: '-3px', lineHeight: 1 }}>
-            .
-          </span>
+        {/* Topo */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
+          <div style={{ display: 'flex', fontSize: 34, fontWeight: 800, letterSpacing: '-1px' }}>
+            <span style={{ color: '#0e1015' }}>GAM</span>
+            <span style={{ color: '#e02020', marginLeft: 10 }}>STUDIO</span>
+          </div>
+          <div
+            style={{
+              display:      'flex',
+              alignItems:   'center',
+              gap:          12,
+              padding:      '10px 20px',
+              borderRadius: 999,
+              background:   '#ffffff',
+              border:       '1px solid #dde0e6',
+              fontSize:     20,
+              fontWeight:   500,
+              color:        '#4a505c',
+            }}
+          >
+            <div style={{ width: 10, height: 10, borderRadius: 999, background: '#e02020' }} />
+            Goiânia, Brasil — atendemos BR, USA e EUR
+          </div>
         </div>
 
-        {/* STUDIO label */}
-        <div
-          style={{
-            fontSize:      18,
-            fontWeight:    700,
-            color:         '#E02020',
-            letterSpacing: '0.55em',
-            textTransform: 'uppercase',
-            marginBottom:  48,
-          }}
-        >
-          STUDIO
+        {/* Título */}
+        <div style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
+          <div style={{ fontSize: 118, fontWeight: 800, color: '#0e1015', letterSpacing: '-5px', lineHeight: 0.95 }}>
+            Sua marca no
+          </div>
+          <div style={{ display: 'flex', fontSize: 118, fontWeight: 800, color: '#0e1015', letterSpacing: '-5px', lineHeight: 0.95 }}>
+            próximo nível<span style={{ color: '#e02020' }}>.</span>
+          </div>
         </div>
 
-        {/* Divider */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 40 }}>
-          <div style={{ width: 48, height: 1, background: 'rgba(224,32,32,0.4)' }} />
-          <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#E02020' }} />
-          <div style={{ width: 48, height: 1, background: 'rgba(224,32,32,0.4)' }} />
+        {/* Rodapé */}
+        <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
+          <div style={{ fontSize: 26, fontWeight: 500, color: '#4a505c' }}>
+            Marketing, mídia e desenvolvimento digital desde 2020
+          </div>
         </div>
-
-        {/* Tagline */}
-        <div style={{ fontSize: 30, fontWeight: 700, color: '#FFFFFF', textAlign: 'center', marginBottom: 14 }}>
-          Sua marca no próximo nível
-        </div>
-        <div style={{ fontSize: 18, color: '#A0A0A0', textAlign: 'center' }}>
-          Marketing · Mídia · Desenvolvimento Digital
-        </div>
-
-        {/* Region footer */}
-        <div
-          style={{
-            position:      'absolute',
-            bottom:        40,
-            color:         '#444444',
-            fontSize:      13,
-            letterSpacing: '0.25em',
-            fontWeight:    600,
-          }}
-        >
-          BR · USA · EUR
-        </div>
-
-        {/* Bottom accent bar */}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 4, background: '#E02020' }} />
       </div>
     ),
-    { ...size }
+    { ...size, fonts: fonts.length ? fonts : undefined },
   )
 }

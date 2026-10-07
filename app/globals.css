@@ -4,20 +4,15 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ───────────────────────────────────────────────────────────────────────────
+   GAM Studio — design tokens (tema claro "Névoa")
+   Base clara e fria, tinta quase-preta, vermelho GAM como sinal.
+   Bandas escuras ("night") são usadas só como contraste pontual.
+   ─────────────────────────────────────────────────────────────────────────── */
 @theme inline {
+  /* shadcn bridge */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-inter);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -34,40 +29,77 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
+
+  /* GAM palette → utilities: bg-paper, text-ink, border-line, bg-red, bg-night ... */
+  --color-paper: #f2f3f5;
+  --color-paper-2: #e9ebef;
+  --color-surface: #ffffff;
+  --color-ink: #0e1015;
+  --color-ink-2: #4a505c;
+  --color-ink-3: #6b717d;
+  --color-line: #dde0e6;
+  --color-line-2: #c9cdd5;
+  --color-red: #e02020;
+  --color-red-600: #c21717;
+  --color-red-50: #fdecec;
+  --color-red-100: #fbd5d5;
+  --color-night: #13151b;
+  --color-night-2: #1b1e26;
+  --color-night-line: #2a2e39;
+  --color-mist: #f4f5f7;   /* texto sobre night */
+  --color-mist-2: #a3a9b6; /* texto secundário sobre night */
+
+  /* Type */
+  --font-sans: var(--font-geist);
+  --font-display: var(--font-bricolage);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-bricolage);
+
+  /* Radius */
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 28px;
+  --radius-xl: 36px;
+
+  /* Easing */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-expo: cubic-bezier(0.87, 0, 0.13, 1);
+
+  /* Shadows */
+  --shadow-soft: 0 1px 0 rgba(14, 16, 21, 0.04), 0 12px 32px -14px rgba(14, 16, 21, 0.14);
+  --shadow-lift: 0 1px 0 rgba(14, 16, 21, 0.04), 0 28px 60px -24px rgba(14, 16, 21, 0.28);
+  --shadow-red: 0 14px 34px -12px rgba(224, 32, 32, 0.55);
+
+  --animate-marquee: marquee var(--duration, 40s) linear infinite;
+  --animate-marquee-vertical: marquee-vertical var(--duration, 40s) linear infinite;
 }
 
 :root {
-  --background: #0A0A0A;
-  --foreground: #FFFFFF;
-  --card: #111111;
-  --card-foreground: #FFFFFF;
-  --popover: #111111;
-  --popover-foreground: #FFFFFF;
-  --primary: #E02020;
-  --primary-foreground: #FFFFFF;
-  --secondary: #1A1A1A;
-  --secondary-foreground: #FFFFFF;
-  --muted: #1A1A1A;
-  --muted-foreground: #B8B8C0;
-  --accent: #E02020;
-  --accent-foreground: #FFFFFF;
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: #222222;
-  --input: #222222;
-  --ring: #E02020;
-  --radius: 0.625rem;
-  --sidebar: #111111;
-  --sidebar-foreground: #FFFFFF;
-  --sidebar-primary: #E02020;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #1A1A1A;
-  --sidebar-accent-foreground: #FFFFFF;
-  --sidebar-border: #222222;
-  --sidebar-ring: #E02020;
+  --background: #f2f3f5;
+  --foreground: #0e1015;
+  --card: #ffffff;
+  --card-foreground: #0e1015;
+  --popover: #ffffff;
+  --popover-foreground: #0e1015;
+  --primary: #e02020;
+  --primary-foreground: #ffffff;
+  --secondary: #e9ebef;
+  --secondary-foreground: #0e1015;
+  --muted: #e9ebef;
+  --muted-foreground: #4a505c;
+  --accent: #e02020;
+  --accent-foreground: #ffffff;
+  --destructive: #c21717;
+  --border: #dde0e6;
+  --input: #dde0e6;
+  --ring: #e02020;
+  --radius: 0.75rem;
+
+  /* layout */
+  --gutter: clamp(20px, 4vw, 56px);
+  --container: 1320px;
+  --section-y: clamp(88px, 12vw, 168px);
+  --nav-h: 72px;
 }
 
 @layer base {
@@ -75,26 +107,135 @@
     @apply border-border;
     box-sizing: border-box;
   }
-  body {
-    @apply bg-background text-foreground;
-    overflow-x: hidden;
-    font-size: clamp(1rem, 0.5vw + 0.875rem, 1.125rem);
-    line-height: 1.65;
-  }
-  p {
-    line-height: 1.7;
-  }
   html {
     @apply font-sans;
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    overflow-x: clip;
+    font-size: clamp(1rem, 0.35vw + 0.92rem, 1.0625rem);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
   }
   ::selection {
-    background-color: #E02020;
-    color: #FFFFFF;
+    background-color: var(--color-red);
+    color: #ffffff;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-red);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+  img, svg, video, canvas {
+    display: block;
   }
 }
 
+/* ─── Utilities ───────────────────────────────────────────────────────────── */
+@layer utilities {
+  .container-gam {
+    width: 100%;
+    max-width: calc(var(--container) + var(--gutter) * 2);
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+  .section-y {
+    padding-block: var(--section-y);
+  }
 
-/* Marquee animations */
+  /* Display type scale (Bricolage Grotesque) */
+  .type-hero {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(3.1rem, 9.2vw, 9.25rem);
+    line-height: 0.92;
+    letter-spacing: -0.038em;
+    font-variation-settings: "opsz" 96;
+  }
+  .type-display {
+    font-family: var(--font-display);
+    font-weight: 750;
+    font-size: clamp(2.4rem, 5.8vw, 5.5rem);
+    line-height: 0.96;
+    letter-spacing: -0.034em;
+    font-variation-settings: "opsz" 96;
+  }
+  .type-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(1.6rem, 3vw, 2.6rem);
+    line-height: 1.04;
+    letter-spacing: -0.03em;
+  }
+  .type-card {
+    font-family: var(--font-display);
+    font-weight: 650;
+    font-size: 1.375rem;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+  .type-lead {
+    font-size: clamp(1.0625rem, 0.6vw + 0.95rem, 1.3rem);
+    line-height: 1.6;
+  }
+  .type-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+  .type-num {
+    font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: -0.05em;
+    font-variant-numeric: tabular-nums;
+    line-height: 0.9;
+  }
+
+  /* The GAM signature: red period */
+  .gam-dot {
+    color: var(--color-red);
+  }
+
+  .animate-marquee {
+    animation: marquee var(--duration, 40s) linear infinite;
+  }
+  .animate-marquee-vertical {
+    animation: marquee-vertical var(--duration, 40s) linear infinite;
+  }
+
+  /* Edge fade for horizontal carousels (works over any background) */
+  .mask-fade-x {
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+    mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+  }
+  .mask-fade-y {
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent);
+    mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent);
+  }
+
+  /* Hairline dot grid, used as a static texture on bands */
+  .bg-dot-grid {
+    background-image: radial-gradient(circle at 1px 1px, rgba(14, 16, 21, 0.09) 1px, transparent 0);
+    background-size: 28px 28px;
+  }
+  .bg-dot-grid-light {
+    background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.08) 1px, transparent 0);
+    background-size: 28px 28px;
+  }
+}
+
+/* ─── Keyframes ───────────────────────────────────────────────────────────── */
 @keyframes marquee {
   from { transform: translateX(0); }
   to   { transform: translateX(calc(-100% - var(--gap))); }
@@ -103,19 +244,166 @@
   from { transform: translateY(0); }
   to   { transform: translateY(calc(-100% - var(--gap))); }
 }
+@keyframes gam-ring {
+  0%        { transform: scale(1);   opacity: 0.55; }
+  70%, 100% { transform: scale(3.4); opacity: 0; }
+}
+@keyframes gam-aurora-a {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50%      { transform: translate3d(-8vw, 6vh, 0) scale(1.08); }
+}
+@keyframes gam-aurora-b {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50%      { transform: translate3d(7vw, -5vh, 0) scale(1.12); }
+}
+@keyframes gam-aurora-c {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50%      { transform: translate3d(10vw, 8vh, 0); }
+}
+@keyframes gam-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-10px) rotate(0.6deg); }
+}
+@keyframes gam-scroll-line {
+  0%   { transform: scaleY(0); transform-origin: top; }
+  50%  { transform: scaleY(1); transform-origin: top; }
+  51%  { transform: scaleY(1); transform-origin: bottom; }
+  100% { transform: scaleY(0); transform-origin: bottom; }
+}
 
-@layer utilities {
-  .animate-marquee {
-    animation: marquee var(--duration, 40s) linear infinite;
+/* Ponto pulsante (kicker): o anel é um ::after animado só com transform/opacity
+   (compositor) — nada de animar box-shadow, que repinta a cada frame.
+   Fica em @layer components para utilitários (absolute, size-*) poderem sobrescrever. */
+@layer components {
+  .pulse-dot {
+    position: relative;
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    flex-shrink: 0;
+    border-radius: 999px;
+    background: var(--color-red);
   }
-  .animate-marquee-vertical {
-    animation: marquee-vertical var(--duration, 40s) linear infinite;
+  .pulse-dot::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: inherit;
+    animation: gam-ring 1.8s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
+  }
+  /* variante para fundos vermelhos */
+  .pulse-dot-white {
+    background: #ffffff;
   }
 }
 
+/* ─── Fundo vivo (AmbientBackground) ──────────────────────────────────────── */
+/* Auroras: gradientes pintados uma vez; a animação é só transform (GPU). */
+.gam-aurora {
+  position: absolute;
+  border-radius: 999px;
+  will-change: transform;
+}
+.gam-aurora-1 {
+  width: 110vmax;
+  height: 110vmax;
+  right: -45vmax;
+  top: -55vmax;
+  background: radial-gradient(closest-side, rgba(224, 32, 32, 0.1), rgba(224, 32, 32, 0));
+  animation: gam-aurora-a 38s ease-in-out infinite;
+}
+.gam-aurora-2 {
+  width: 100vmax;
+  height: 100vmax;
+  left: -45vmax;
+  bottom: -55vmax;
+  background: radial-gradient(closest-side, rgba(92, 110, 255, 0.075), rgba(92, 110, 255, 0));
+  animation: gam-aurora-b 44s ease-in-out infinite;
+}
+.gam-aurora-3 {
+  width: 70vmax;
+  height: 70vmax;
+  left: 15vw;
+  top: 25vh;
+  background: radial-gradient(closest-side, rgba(224, 32, 32, 0.045), rgba(224, 32, 32, 0));
+  animation: gam-aurora-c 52s ease-in-out infinite;
+}
+/* Grade de pontos estática (o canvas só desenha os pontos ativos por cima) */
+.gam-dots {
+  background-image: radial-gradient(circle at center, rgba(14, 16, 21, 0.14) 0.75px, transparent 1.25px);
+  background-size: 28px 28px;
+}
+@media (max-width: 767px) {
+  .gam-dots { background-size: 24px 24px; }
+}
+/* Grão de filme — sem mix-blend-mode (blend em tela cheia custa caro no scroll) */
+.gam-grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ─── Transição entre páginas (View Transitions API, via <ViewTransition> no template) ──
+   O navegador anima "fotos" da página antiga e da nova na GPU — leve e fluido.
+   A navbar fica ancorada (sem animar) e só o conteúdo transiciona. */
+::view-transition-group(site-header) {
+  animation: none;
+  z-index: 50;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.3s;
+}
+::view-transition-old(.gam-page-out) {
+  animation: gam-page-out 0.32s cubic-bezier(0.7, 0, 0.84, 0) both;
+}
+::view-transition-new(.gam-page-in) {
+  animation: gam-page-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.12s both;
+}
+@keyframes gam-page-out {
+  to { opacity: 0; transform: translateY(-24px) scale(0.985); }
+}
+@keyframes gam-page-in {
+  from { opacity: 0; transform: translateY(36px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* Custom cursor: only hide the native one when our cursor is mounted */
+html.has-gam-cursor,
+html.has-gam-cursor a,
+html.has-gam-cursor button,
+html.has-gam-cursor [role="button"] {
+  cursor: none;
+}
+html.has-gam-cursor input,
+html.has-gam-cursor textarea,
+html.has-gam-cursor select {
+  cursor: text;
+}
+
+/* Lenis */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: clip; }
+
 @media (prefers-reduced-motion: reduce) {
   .animate-marquee,
-  .animate-marquee-vertical {
-    animation: none;
+  .animate-marquee-vertical,
+  .pulse-dot::after,
+  .gam-aurora {
+    animation: none !important;
+  }
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
   }
 }
