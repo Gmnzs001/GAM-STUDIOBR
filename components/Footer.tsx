@@ -271,7 +271,7 @@ export default function Footer({ cta = true }: { cta?: boolean }) {
         <div className="flex flex-col gap-4 border-t border-night-line py-7 text-sm text-mist-2 md:flex-row md:items-center md:justify-between">
           <p suppressHydrationWarning>© {year} GAM Studio. Todos os direitos reservados.</p>
           <p className="inline-flex items-center gap-1.5">
-            Feito em Goiânia com
+            Feito por GamStudio com
             <Heart className="size-4 fill-red text-red" strokeWidth={0} aria-label="amor" role="img" />
           </p>
           <button

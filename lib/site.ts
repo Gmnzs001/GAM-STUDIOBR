@@ -12,8 +12,8 @@ export const SITE_URL = 'https://gamstudiobr.com'
 // ─── Contato ──────────────────────────────────────────────────────────────────
 export const WHATSAPP_NUMBER = '5562992589599'
 export const WHATSAPP_DISPLAY = '62 99258-9599'
-export const INSTAGRAM_HANDLE = '@gamstudio.br'
-export const INSTAGRAM_URL = 'https://instagram.com/gamstudio.br'
+export const INSTAGRAM_HANDLE = '@gamstudiobr'
+export const INSTAGRAM_URL = 'https://instagram.com/gamstudiobr'
 
 /** Link do WhatsApp com mensagem pré-preenchida. */
 export const waLink = (text = 'Olá! Vim pelo site e gostaria de fazer um orçamento.') =>
